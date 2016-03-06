@@ -13,8 +13,11 @@
 
 typedef enum {
 	//Regular priority tasks
-	
+	UUT_TASK_PRIORITY=14,
+	TESTER_TASK_PRIORITY,
+
 	USB_TASK_PRIORITY = (START_APPLICATION_PRIORITY + 1),
+	
 	POWER_MGM_TASK_PRIORITY,
 	CAN_TASK_RX_PRIORITY,
 	CAN_TASK_TX_PRIORITY,
@@ -40,6 +43,8 @@ typedef enum {
 	FPGA_UART_RX_TASK,
 	ACC_TASK         ,
 	REG_TASK		 ,
+	TESTER_TASK      ,
+	UUT_TASK		 ,
 	NUM_TASKS		 ,
 } TASK_TEMPLATE_INDEX_T;
 
@@ -54,6 +59,8 @@ typedef enum {
 	ACC_QUEUE        ,
 	POWER_MGM_QUEUE  ,
 	REG_QUEUE   	 ,
+	TESTER_QUEUE     ,
+	UUT_QUEUE        ,
 	USB_TEST_QUEUE	,
 } APPLICATION_QUEUE_T;
 
@@ -67,8 +74,8 @@ extern void Main_task        (uint32_t);
 extern void Power_MGM_task   (uint32_t);
 
 extern void Acc_task         (uint32_t);
-
-
+extern void tester_task      (uint32_t);
+extern void uut_task         (uint32_t);
 extern void J1708_Tx_task     (uint32_t);
 extern void J1708_Rx_task     (uint32_t);
 extern void FPGA_UART_Rx_task (uint32_t );

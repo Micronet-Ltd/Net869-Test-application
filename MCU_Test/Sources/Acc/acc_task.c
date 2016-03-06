@@ -112,7 +112,7 @@ void Acc_task (uint32_t initial_data)
 	event_result = _event_open("event.AccInt", &g_acc_event_h);
 	if(MQX_OK != event_result){	}
 
-	printf("\nACC Task: Start \n");
+	//print yuvalf("\nACC Task: Start \n");
 
 	GPIO_DRV_SetPinOutput   (ACC_ENABLE       );
 	_time_delay(100);
@@ -176,7 +176,7 @@ void Acc_task (uint32_t initial_data)
 	}
 
 	// should never get here
-	printf("\nACC Task: End \n");
+	//print yuvalf("\nACC Task: End \n");
 	_task_block();
 }
 
@@ -191,11 +191,11 @@ bool accInit (void)
 	if (I2C_DRV_MasterReceiveDataBlocking (ACC_I2C_PORT, &acc_device, write_data,  1, &read_data, 1, TIME_OUT) != kStatus_I2C_Success)		goto _ACC_CONFIG_FAIL;
 	if (read_data == ACC_VALUE_ID)
 	{
-		printf ("ACC Task: Device detected\n");
+		//print yuvalf ("ACC Task: Device detected\n");
 	}
 	else
 	{
-		printf ("ACC Task: Device NOT detected\n");
+		//print yuvalf ("ACC Task: Device NOT detected\n");
 		goto _ACC_CONFIG_FAIL;
 	}
 	
@@ -244,11 +244,11 @@ bool accInit (void)
 	write_data[1] = 0xC1 ;
     if (I2C_DRV_MasterSendDataBlocking    (ACC_I2C_PORT, &acc_device, NULL,  0, write_data, 2, TIME_OUT) != kStatus_I2C_Success)		goto _ACC_CONFIG_FAIL;
 
-	printf ("ACC Task: Device Configured \n");
+	//printf ("ACC Task: Device Configured \n");
 	return true;
 
 _ACC_CONFIG_FAIL:
-	printf ("ACC Task: ERROR: Device NOT Configured \n");
+	//printf ("ACC Task: ERROR: Device NOT Configured \n");
 	return false;
 } 
 
@@ -262,13 +262,13 @@ void AccEnable (void)
 	if (I2C_DRV_MasterReceiveDataBlocking (ACC_I2C_PORT, &acc_device, write_data,  1, &read_data, 1, TIME_OUT) != kStatus_I2C_Success)		goto _ACC_ENABLE_FAIL;
 
 	write_data[1] = read_data |= 0x1;
-	if (I2C_DRV_MasterSendDataBlocking    (ACC_I2C_PORT, &acc_device, NULL,  0, write_data, 2, TIME_OUT) != kStatus_I2C_Success)			goto _ACC_ENABLE_FAIL;
-	printf ("ACC Task: Accelerometer Enabled \n");
+	//if (I2C_DRV_MasterSendDataBlocking    (ACC_I2C_PORT, &acc_device, NULL,  0, write_data, 2, TIME_OUT) != kStatus_I2C_Success)			goto _ACC_ENABLE_FAIL;
+	//printf ("ACC Task: Accelerometer Enabled \n");
 	acc_enabled_g = TRUE;
 	return;
 
 _ACC_ENABLE_FAIL:
-	printf ("ACC Task: ERROR: Accelerometer NOT enabled \n");
+_time_delay(10); //printf ("ACC Task: ERROR: Accelerometer NOT enabled \n");
 
 }
 
@@ -283,12 +283,12 @@ void AccDisable (void)
 
 	write_data[1] = read_data &= ~0x1;
 	if (I2C_DRV_MasterSendDataBlocking    (ACC_I2C_PORT, &acc_device, NULL,  0, write_data, 2, TIME_OUT) != kStatus_I2C_Success)			goto _ACC_DISABLE_FAIL;
-	printf ("ACC Task: Accelerometer Disabled \n");
+	//print yuvalf ("ACC Task: Accelerometer Disabled \n");
 	acc_enabled_g = FALSE;
 	return;
 
 _ACC_DISABLE_FAIL:
-	printf ("ACC Task: ERROR: Accelerometer NOT disabled \n");
+	_time_delay(10); //print yuvalf ("ACC Task: ERROR: Accelerometer NOT disabled \n");
 }
 
 void acc_fifo_read (uint8_t *buffer, uint8_t max_buffer_size)
@@ -312,7 +312,7 @@ void acc_fifo_read (uint8_t *buffer, uint8_t max_buffer_size)
 	return;
 
 _ACC_FIFO_READ_FAIL:
-	printf ("ACC Task: ERROR: Accelerometer read failure \n");
+_time_delay(10); //print yuvalf ("ACC Task: ERROR: Accelerometer read failure \n");
 }
 
 #if 0
