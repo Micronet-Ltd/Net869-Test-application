@@ -16,12 +16,6 @@
 /******************************************************************************
  * Includes
  *****************************************************************************/
-//#include "fsl_device_registers.h"
-//#include "fsl_clock_manager.h"
-//#include "board.h"
-//#include "fsl_debug_console.h"
-//#include "fsl_port_hal.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <event.h>
@@ -41,8 +35,9 @@
  * Global Functions Prototypes
  *****************************************************************************/
 void clear_screan();
-
+char* strnstr(const char *s, const char *find, size_t slen);
 void menu_display();
+char* strnstr(const char *s, const char *find, size_t slen);
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -173,95 +168,77 @@ bool search_command_tester(UART_ACK_COMMAND_NUMBER_T* command, uint8_t* command_
 
 {
 	uint32_t j = 0;
-	uint32_t i = 0;
-
 	UART_ACK_COMMAND_NUMBER_T command_type = NO_COMMAND;
-
-	char command_string[MAX_COMMAND_SIZE] = {0};
-
+	char command_string[20] = {0};
 	uint8_t command_size = 0;
 
-	//for(i = 0; i < *buffer_size; i++)
-	//{
 
-		//if(buffer[i] == 0xD) //carriage return
-		//{
-			//check if there is space for minimum command:
-			for(j = 0; j < MAX_UART_ACK_COMMAND; j++)
-            {
-				switch (j)
-				{
-				case UART_ACK_COMMAND:
-					sprintf(command_string, uart_tester_ack_command_list.uart.string, uart_tester_ack_command_list.uart.size);
-					command_size = uart_tester_ack_command_list.uart.size;
-					command_type = uart_tester_ack_command_list.uart.type;
-					break;
-
-				case J1708_ACK_COMMAND:
-					sprintf(command_string, uart_tester_ack_command_list.j1708.string, uart_tester_ack_command_list.j1708.size);
-					command_size = uart_tester_ack_command_list.j1708.size;
-					command_type = uart_tester_ack_command_list.j1708.type;
-					break;
-
-				case CANBUS1_ACK_COMMAND:
-					if(tester_parameters.menu_mode_on)
-					{
-						sprintf(command_string, uart_tester_ack_command_list.canbus1.string, uart_tester_ack_command_list.canbus1.size);
-						command_size = uart_tester_ack_command_list.canbus1.size;
-						command_type = uart_tester_ack_command_list.canbus1.type;
-					}
-					break;
-
-				case CANBUS2_ACK_COMMAND:
-					if(tester_parameters.menu_mode_on)
-					{
-						sprintf(command_string, uart_tester_ack_command_list.canbus2.string, uart_tester_ack_command_list.canbus2.size);
-						command_size = uart_tester_ack_command_list.canbus2.size;
-						command_type = uart_tester_ack_command_list.canbus2.type;
-					}
-					break;
-				case WIGGLE_ACK_COMMAND:
-					if(tester_parameters.menu_mode_on)
-					{
-						sprintf(command_string, uart_tester_ack_command_list.wiggle.string, uart_tester_ack_command_list.wiggle.size);
-						command_size = uart_tester_ack_command_list.wiggle.size;
-						command_type = uart_tester_ack_command_list.wiggle.type;
-					}
-					break;
-
-				}
-
-				//command_string[command_size] = '\0'; //append \0 to end of the command
-
-				//search for command:
-				if(( strnstr((char*)command_buffer, command_string, 20) !=NULL) && (command_size != 0x0))
-				{
-					//*buffer_size = 0;
-					*command = command_type;
-					//found command
-					return 1; //command found
-				}
-
-            }
-		//}
-	//}//for(i = 0; i < buffer_size; i++)
-/*
-	//if no command found so copy last part to beginning:
-	if(*buffer_size > MAX_COMMAND_SIZE * 2)
+	//check if there is space for minimum command:
+	for(j = 0; j < MAX_UART_ACK_COMMAND; j++)
 	{
-		memcpy(buffer, (buffer + *buffer_size - MAX_COMMAND_SIZE), MAX_COMMAND_SIZE);
-		*buffer_size = MAX_COMMAND_SIZE;
+		switch (j)
+		{
+		case UART_ACK_COMMAND:
+			sprintf(command_string, uart_tester_ack_command_list.uart.string, uart_tester_ack_command_list.uart.size);
+			command_size = uart_tester_ack_command_list.uart.size;
+			command_type = uart_tester_ack_command_list.uart.type;
+			break;
+
+		case J1708_ACK_COMMAND:
+			sprintf(command_string, uart_tester_ack_command_list.j1708.string, uart_tester_ack_command_list.j1708.size);
+			command_size = uart_tester_ack_command_list.j1708.size;
+			command_type = uart_tester_ack_command_list.j1708.type;
+			break;
+
+		case CANBUS1_ACK_COMMAND:
+			if(tester_parameters.menu_mode_on)
+			{
+				sprintf(command_string, uart_tester_ack_command_list.canbus1.string, uart_tester_ack_command_list.canbus1.size);
+				command_size = uart_tester_ack_command_list.canbus1.size;
+				command_type = uart_tester_ack_command_list.canbus1.type;
+			}
+			break;
+
+		case CANBUS2_ACK_COMMAND:
+			if(tester_parameters.menu_mode_on)
+			{
+				sprintf(command_string, uart_tester_ack_command_list.canbus2.string, uart_tester_ack_command_list.canbus2.size);
+				command_size = uart_tester_ack_command_list.canbus2.size;
+				command_type = uart_tester_ack_command_list.canbus2.type;
+			}
+			break;
+		case WIGGLE_ACK_COMMAND:
+			if(tester_parameters.menu_mode_on)
+			{
+				sprintf(command_string, uart_tester_ack_command_list.wiggle.string, uart_tester_ack_command_list.wiggle.size);
+				command_size = uart_tester_ack_command_list.wiggle.size;
+				command_type = uart_tester_ack_command_list.wiggle.type;
+			}
+			break;
+
+		}
+
+		//command_string[command_size] = '\0'; //append \0 to end of the command
+
+		//search for command:
+		if(( strnstr((char*)command_buffer, command_string, 20) !=NULL) && (command_size != 0x0))
+		{
+			//*buffer_size = 0;
+			*command = command_type;
+			//found command
+			return 1; //command found
+		}
+
 	}
-*/
+
 	return 0; //command not found
 }
 
 
-bool wait_for_uart_massage_tester(UART_ACK_COMMAND_NUMBER_T* command , uint32_t* size)
+bool wait_for_uart_massage_tester(UART_ACK_COMMAND_NUMBER_T* command )
 {
 	*command = NO__ACK_COMMAND;
 	bool command_found = false;
-	uint32_t i;
 
 	memset(buffer_scan,0x0,sizeof(buffer_scan));
 	scanf(" %s", &buffer_scan);
@@ -281,11 +258,10 @@ bool wait_for_uart_massage_tester(UART_ACK_COMMAND_NUMBER_T* command , uint32_t*
 void tester_parser(COMMAND_NUMBER_T command)
 {
 
-	uint8_t cdc_buffer[30] = {0};
+	char cdc_buffer[30] = {0};
 	bool uart_status = 0;
 	 _time_delay(10);            // context switch
-	uint32_t size = 0;
-	uint32_t i ;
+	 UART_ACK_COMMAND_NUMBER_T uart_command;
 
 	memset(buffer_print,0x0,sizeof(buffer_print));
 
@@ -327,7 +303,7 @@ void tester_parser(COMMAND_NUMBER_T command)
 			printf("%s",buffer_print);
 
 			 _time_delay(10);            // context switch
-			uart_status = wait_for_uart_massage_tester(&command ,&size);
+			uart_status = wait_for_uart_massage_tester(&uart_command);
 
 			//print pass is uart ack ok:
 			if(uart_status)
@@ -405,8 +381,6 @@ void tester_task()
  *                  else return 0
  *
  *****************************************************************************/
-//bool cdc_search_command(uint8_t* buffer, uint32_t* start_index, uint32_t* end_index, command_number_t* command)
-//cdc_search_command(g_cdc_recv_buf, &g_cdc_buf_start_index, &g_cdc_buf_end_index, &command);
 bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* buffer_size)
 
 {
