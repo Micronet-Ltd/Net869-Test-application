@@ -1,6 +1,16 @@
 #include "tasks_list.h"
 
 
+extern void Main_task        (uint32_t);
+extern void Power_MGM_task   (uint32_t);
+
+extern void Acc_task         (uint32_t);
+extern void tester_task      (uint32_t);
+extern void uut_task         (uint32_t);
+extern void J1708_Tx_task     (uint32_t);
+extern void J1708_Rx_task     (uint32_t);
+extern void FPGA_UART_Rx_task (uint32_t );
+
 TASK_TEMPLATE_STRUCT MQX_template_list[] =
 {
 //  Task number,		Entry point,			Stack,     Pri,	    					Task name       	,	    Auto start        Creation Param      Time Slice

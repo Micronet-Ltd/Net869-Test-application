@@ -78,7 +78,7 @@ UART_TESTER_ACK_COMMAND_LIST_T uart_tester_ack_command_list =
 				UART_ACK_COMMAND
 		},
 		{
-				"8071j",
+				"j1708_ack",
 				5,
 				J1708_ACK_COMMAND
 		},
@@ -98,7 +98,7 @@ UART_TESTER_ACK_COMMAND_LIST_T uart_tester_ack_command_list =
 				WIGGLE_ACK_COMMAND
 		}
 };
-
+/*
 //command from tester to uut side:
 UART_TESTER_ACK_COMMAND_LIST_T uart_tester_command_list =
 {
@@ -134,7 +134,7 @@ UART_TESTER_ACK_COMMAND_LIST_T uart_tester_command_list =
 		}
 };
 
-
+*/
 
 typedef struct
 {
@@ -142,6 +142,10 @@ typedef struct
 	CDC_COMMAND_T menu;
 	CDC_COMMAND_T menu_exit;
 	CDC_COMMAND_T menu_uart;
+	CDC_COMMAND_T menu_j1708;
+	CDC_COMMAND_T menu_canbus1;
+	CDC_COMMAND_T menu_canbus2;
+	CDC_COMMAND_T menu_wiggle;
 
 
 } COMMAND_LIST_T;
@@ -168,6 +172,26 @@ COMMAND_LIST_T command_list =
 				"1",
 				1,
 				MENU_UART
+		},
+		{
+				"2",
+				1,
+				MENU_J1708
+		},
+		{
+				"3",
+				1,
+				MENU_CANBUS1
+		},
+		{
+				"4",
+				1,
+				MENU_CANBUS2
+		},
+		{
+				"5",
+				1,
+				MENU_WIGGLE
 		}
 };
 

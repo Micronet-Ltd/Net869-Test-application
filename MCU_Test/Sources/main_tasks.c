@@ -128,22 +128,22 @@ void Main_task( uint32_t initial_data ) {
     GPIO_DRV_SetPinOutput(UART_ENABLE);
     GPIO_DRV_SetPinOutput(FTDI_RSTN);
 
-/*
- * RUSLAN closed for testing
+
+ // RUSLAN closed for testing
 	g_out_message_pool = _msgpool_create (sizeof(APPLICATION_MESSAGE_T), NUM_CLIENTS, 0, 0);
 	if (g_out_message_pool == MSGPOOL_NULL_POOL_ID)
 	{
-		printf("\nCould not create a g_out_message_pool message pool\n");
+		//printf("\nCould not create a g_out_message_pool message pool\n");
 		_task_block();
 	}
 
 	g_in_message_pool = _msgpool_create (sizeof(APPLICATION_MESSAGE_T), NUM_CLIENTS, 0, 0);
 	if (g_in_message_pool == MSGPOOL_NULL_POOL_ID)
 	{
-		printf("\nCould not create a g_in_message_pool message pool\n");
+		//printf("\nCould not create a g_in_message_pool message pool\n");
 		_task_block();
 	}
-*/
+
 	main_qid = _msgq_open(MAIN_QUEUE, 0);
 
 	_time_delay (1000);

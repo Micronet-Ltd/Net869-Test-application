@@ -24,7 +24,7 @@
 #include "virtual_com.h"
 #include "fsl_uart_driver.h"
 #include "uart_configuration.h"
-
+#include "tasks_list.h"
 /*****************************************************************************
  * Constant and Macro's - None
  *****************************************************************************/
@@ -38,6 +38,11 @@
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
+extern _pool_id   g_out_message_pool;
+_queue_id   uut_qid;
+APPLICATION_MESSAGE_PTR_T uut_msg_ptr;
+APPLICATION_MESSAGE_PTR_T uut_msg_recieve_ptr;
+
 /*****************************************************************************
  * Local Types - None
  *****************************************************************************/
@@ -86,7 +91,48 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		break;
 
 	case J1708_UUT_COMMAND:
-		//
+
+		//init rx queue:
+		set_queue_target(UUT_QUEUE);
+
+
+		//send ack:
+		sprintf(buffer, "j1708_ack\n");
+		printf("%s",buffer);
+
+		uint8_t* j1708_data;
+		TIME_STRUCT time;
+		bool timeout = false;
+		uint8_t string_j1708[] = "j1708";
+		uint8_t string_j1708_back[] = "8071j";
+		//wait for j1708 massage:
+		uut_msg_recieve_ptr = _msgq_receive(uut_qid, 10000);
+		if (uut_msg_recieve_ptr == NULL)
+		{
+			break;
+		}
+
+		//check getting : "8071j"
+		//search for command:
+		if(!strcmp(uut_msg_recieve_ptr->data, string_j1708))
+		{
+			//send back data in reverse:
+			_time_get(&time);
+			if ((uut_msg_ptr = (APPLICATION_MESSAGE_PTR_T) _msg_alloc (g_out_message_pool)) == NULL)
+			{
+				break;
+			}
+			//memcpy(uut_msg_ptr->.data, string_j1708, sizeof(string_j1708));
+			sprintf(uut_msg_ptr->data, string_j1708_back, strlen(string_j1708_back));
+			uut_msg_ptr->timestamp = time;
+			uut_msg_ptr->header.SOURCE_QID = uut_qid;
+			uut_msg_ptr->header.TARGET_QID = _msgq_get_id(0, J1708_TX_QUEUE);
+			uut_msg_ptr->header.SIZE = sizeof (MESSAGE_HEADER_STRUCT) + strlen((char *)uut_msg_ptr->data) + 1 ;
+			_msgq_send(uut_msg_ptr);
+		}
+
+		_msg_free(uut_msg_recieve_ptr);
+
 		break;
 
 	case CANBUS1_UUT_COMMAND:
@@ -206,6 +252,12 @@ void uut_task()
 	uint32_t size = 0;
 	bool status = false;
 	UART_COMMAND_NUMBER_T command;
+
+	uut_qid = _msgq_open ((_queue_number)UUT_QUEUE, 0);
+	if (MSGQ_NULL_QUEUE_ID == uut_qid)
+	{
+	   _task_block();
+	}
 
 	while (1)
 	{
