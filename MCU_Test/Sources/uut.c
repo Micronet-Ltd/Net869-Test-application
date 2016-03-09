@@ -25,6 +25,8 @@
 #include "fsl_uart_driver.h"
 #include "uart_configuration.h"
 #include "tasks_list.h"
+#include "canbus.h"
+#include "ADC.h"
 /*****************************************************************************
  * Constant and Macro's - None
  *****************************************************************************/
@@ -66,6 +68,7 @@ uint8_t buffer[20] = {0};
 void execute_command(UART_COMMAND_NUMBER_T command_type)
 {
 	memset(buffer,0x0,sizeof(buffer));
+	uint32_t adc_value = 0;
 
 	switch (command_type)
 	{
@@ -134,6 +137,29 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		_msg_free(uut_msg_recieve_ptr);
 
 		break;
+	case A2D_UUT_COMMAND:
+
+
+
+		//read a2d
+		ADC_sample_input (kADC_ANALOG_IN1);
+		adc_value =  ADC_get_value (kADC_ANALOG_IN1);
+
+		//check value
+		if((adc_value > 3800) && (adc_value < 4400))
+		{
+			//send ack:
+			sprintf(buffer, "a2d_ack\n");
+			printf("%s",buffer);
+		}
+		else
+		{
+			//send error ack:
+			sprintf(buffer, "error_ack\n");
+			printf("%s",buffer);
+		}
+
+		break;
 
 	case CANBUS1_UUT_COMMAND:
 		//
@@ -162,6 +188,7 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 	char command_string[MAX_UART_UUT_COMMAND_SIZE] = {0};
 	uint8_t command_size = 0;
 
+	memset(command_string,0x0, sizeof(command_string));
 	//check if there is space for minimum command:
 	for(j = 0; j < MAX_UUT_COMMAND; j++)
 	{
@@ -178,7 +205,11 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 			command_size = uart_command_list.j1708.size;
 			command_type = uart_command_list.j1708.type;
 			break;
-
+		case A2D_UUT_COMMAND:
+			sprintf(command_string, uart_command_list.a2d.string, uart_command_list.a2d.size);
+			command_size = uart_command_list.a2d.size;
+			command_type = uart_command_list.a2d.type;
+			break;
 		case CANBUS1_UUT_COMMAND:
 				sprintf(command_string, uart_command_list.canbus1.string, uart_command_list.canbus1.size);
 				command_size = uart_command_list.canbus1.size;
@@ -252,6 +283,8 @@ void uut_task()
 	uint32_t size = 0;
 	bool status = false;
 	UART_COMMAND_NUMBER_T command;
+
+	ADC_init();
 
 	uut_qid = _msgq_open ((_queue_number)UUT_QUEUE, 0);
 	if (MSGQ_NULL_QUEUE_ID == uut_qid)

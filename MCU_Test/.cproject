@@ -109,6 +109,8 @@
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/FPGA_API&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/Acc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/I2C&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/A2D&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/Sources/Canbus&quot;"/>
 								</option>
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs.2042530595" name="Defined symbols (-D)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.defs" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="CPU_MK20DX256VLQ10=1"/>

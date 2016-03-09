@@ -27,6 +27,7 @@ typedef enum {
 	NO_UUT_COMMAND		=	0,
 	UART_UUT_COMMAND		 ,
 	J1708_UUT_COMMAND        ,
+	A2D_UUT_COMMAND        	 ,
 	CANBUS1_UUT_COMMAND		 ,
 	CANBUS2_UUT_COMMAND      ,
 	WIGGLE_UUT_COMMAND		 ,
@@ -49,6 +50,7 @@ typedef struct
 {
 	UART_COMMAND_T uart;
 	UART_COMMAND_T j1708;
+	UART_COMMAND_T a2d;
 	UART_COMMAND_T canbus1;
 	UART_COMMAND_T canbus2;
 	UART_COMMAND_T wiggle;
@@ -68,6 +70,11 @@ UART_COMMAND_LIST_T uart_command_list =
 				"j1708",
 				5,
 				J1708_UUT_COMMAND
+		},
+		{
+				"a2d",
+				3,
+				A2D_UUT_COMMAND
 		},
 		{
 				"canbus1",
@@ -106,8 +113,13 @@ UART_COMMAND_LIST_T uart_ack_command_list =
 		},
 		{
 				"j1708_ack\n",
-				5,
+				10,
 				J1708_UUT_COMMAND
+		},
+		{
+				"a2d_ack\n",
+				8,
+				A2D_UUT_COMMAND
 		},
 		{
 				"canbus1_ack\n",

@@ -26,6 +26,7 @@
 #include "uart_configuration.h"
 
 #include "tasks_list.h"
+#include "canbus.h"
 /*****************************************************************************
  * Constant and Macro's - None
  *****************************************************************************/
@@ -116,21 +117,24 @@ void menu_display()
 	cdc_write((uint8_t*)buf, strlen(buf));
 
 
+	memset(buf,0x0,sizeof(buf));
+	sprintf(buf, "3. a2d\r\n");
+	cdc_write((uint8_t*)buf, strlen(buf));
 
 	memset(buf,0x0,sizeof(buf));
-	sprintf(buf, "3. canbus1\r\n");
+	sprintf(buf, "4. canbus1\r\n");
 	cdc_write((uint8_t*)buf, strlen(buf));
 
 
 
 	memset(buf,0x0,sizeof(buf));
-	sprintf(buf, "4. canbus2\r\n");
+	sprintf(buf, "5. canbus2\r\n");
 	cdc_write((uint8_t*)buf, strlen(buf));
 
 
 
 	memset(buf,0x0,sizeof(buf));
-	sprintf(buf, "5. wiggle sensor\r\n");
+	sprintf(buf, "6. wiggle sensor\r\n");
 	cdc_write((uint8_t*)buf, strlen(buf));
 
 }
@@ -198,7 +202,14 @@ bool search_command_tester(UART_ACK_COMMAND_NUMBER_T* command, uint8_t* command_
 			command_size = uart_tester_ack_command_list.j1708.size;
 			command_type = uart_tester_ack_command_list.j1708.type;
 			break;
-
+		case A2D_ACK_COMMAND:
+			if(tester_parameters.menu_mode_on)
+			{
+				sprintf(command_string, uart_tester_ack_command_list.a2d.string, uart_tester_ack_command_list.a2d.size);
+				command_size = uart_tester_ack_command_list.a2d.size;
+				command_type = uart_tester_ack_command_list.a2d.type;
+			}
+			break;
 		case CANBUS1_ACK_COMMAND:
 			if(tester_parameters.menu_mode_on)
 			{
@@ -399,15 +410,62 @@ void tester_parser(COMMAND_NUMBER_T command)
 
 		}
 		break;
+	case MENU_CANBUS1:
+		if((tester_parameters.menu_mode_on) && (FALSE == tester_parameters.tester_busy))
+		{
+			//send canbus:
+			sprintf(buffer_print, "canbus1\n",7);
+			printf("%s",buffer_print);
 
+			//wait for ack:
+			uart_status = wait_for_uart_massage_tester(&uart_command);
+
+			//get ack:
+			if(uart_command == CANBUS1_ACK_COMMAND)
+			{
+				//send canbus:
+				//wait for canbus
+				//if ok send cdc ok back:
+				//
+			}
+
+		}
+		break;
+	case MENU_A2D:
+		if((tester_parameters.menu_mode_on) && (FALSE == tester_parameters.tester_busy))
+		{
+			//send canbus:
+			sprintf(buffer_print, "a2d\n",4);
+			printf("%s",buffer_print);
+
+			//wait for ack:
+			uart_status = wait_for_uart_massage_tester(&uart_command);
+
+			//get ack:
+			if(uart_command == A2D_ACK_COMMAND)
+			{
+
+				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+				sprintf(cdc_buffer, "A2D	pass\r\n");
+				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+				break;
+			}
+			else
+			{
+				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+				sprintf(cdc_buffer, "A2D	fail\r\n");
+				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+				break;
+			}
+		}
+		break;
 	default:
 		break;
 	}
 }
 
- uint8_t buf[64] = {0};
- uint8_t buffere[64] = {0};
- uint8_t buffered[64] = {0};
+
+
 
 
 void release_tester()
@@ -489,7 +547,14 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* bu
 						command_type = command_list.menu_j1708.type;
 					}
 					break;
-
+				case MENU_A2D:
+					if(tester_parameters.menu_mode_on)
+					{
+						memcpy(command_string, command_list.menu_a2d.string, command_list.menu_a2d.size);
+						command_size = command_list.menu_a2d.size;
+						command_type = command_list.menu_a2d.type;
+					}
+					break;
 				case MENU_CANBUS1:
 					if(tester_parameters.menu_mode_on)
 					{
@@ -544,6 +609,8 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* bu
 	return 0; //command not found
 }
 
+uint8_t buf[64] = {0};
+
 void tester_task()
 {
 
@@ -553,7 +620,15 @@ void tester_task()
 
 	cdc_init();
 
-
+	 //rxMailbxNum 			8
+	 //txMailbxNum			9
+	 //rxRemoteMailbxNum	10
+	 //txRemoteMailbxNum	11
+	 //rxRemoteId			0x0F0
+	 //txRemoteId			0x00F
+	 //rxId					0x456
+	 //txId					0x123
+	//canbus_init(8, 9, 10, 11, 0x0F0, 0x00F, 0x456, 0x123);
 
 	tester_qid = _msgq_open ((_queue_number)TESTER_QUEUE, 0);
 	if (MSGQ_NULL_QUEUE_ID == tester_qid)
