@@ -308,7 +308,7 @@ void MQX_PORTA_IRQHandler(void)
 {
 	if (GPIO_DRV_IsPinIntPending (VIB_SENS)) {
 		GPIO_DRV_ClearPinIntFlag(VIB_SENS);
-		//wiggle_sensor_cnt++;
+		wiggle_sensor_cnt++;
 	}
 }
 

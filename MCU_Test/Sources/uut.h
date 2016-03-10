@@ -34,6 +34,7 @@ typedef enum {
 	ABORT_UUT_COMMAND        ,
 	ABORT_ACK_UUT_COMMAND    ,
 	ACC_UUT_COMMAND			 ,
+	RESET_UUT_COMMAND ,
 	MAX_UUT_COMMAND          ,
 } UART_COMMAND_NUMBER_T;
 
@@ -58,6 +59,7 @@ typedef struct
 	UART_COMMAND_T abort;
 	UART_COMMAND_T abort_ack;
 	UART_COMMAND_T acc;
+	UART_COMMAND_T reset;
 
 
 } UART_COMMAND_LIST_T;
@@ -108,6 +110,11 @@ UART_COMMAND_LIST_T uart_command_list =
 				"acc",
 				3,
 				ACC_UUT_COMMAND
+		},
+		{
+				"reset",
+				5,
+				RESET_UUT_COMMAND
 		}
 };
 

@@ -52,6 +52,7 @@ extern _pool_id   g_out_message_pool;
 _queue_id   tester_qid;
 APPLICATION_MESSAGE_PTR_T tester_msg_ptr;
 APPLICATION_MESSAGE_PTR_T uut_msg_recieve_ptr;
+bool reset_test = false;
 //bool static tester_side = FALSE;
 //bool static uut_side	= FALSE;
 /*****************************************************************************
@@ -139,6 +140,10 @@ void menu_display()
 
 	memset(buf,0x0,sizeof(buf));
 	sprintf(buf, "7. acc sensor\r\n");
+	cdc_write((uint8_t*)buf, strlen(buf));
+
+	memset(buf,0x0,sizeof(buf));
+	sprintf(buf, "8. reset bottun\r\n");
 	cdc_write((uint8_t*)buf, strlen(buf));
 
 }
@@ -245,6 +250,14 @@ bool search_command_tester(UART_ACK_COMMAND_NUMBER_T* command, uint8_t* command_
 				sprintf(command_string, uart_tester_ack_command_list.acc.string, uart_tester_ack_command_list.acc.size);
 				command_size = uart_tester_ack_command_list.acc.size;
 				command_type = uart_tester_ack_command_list.acc.type;
+			}
+			break;
+		case RESET_ACK_COMMAND:
+			if(tester_parameters.menu_mode_on)
+			{
+				sprintf(command_string, uart_tester_ack_command_list.reset.string, uart_tester_ack_command_list.reset.size);
+				command_size = uart_tester_ack_command_list.reset.size;
+				command_type = uart_tester_ack_command_list.reset.type;
 			}
 			break;
 
@@ -513,6 +526,74 @@ void tester_parser(COMMAND_NUMBER_T command)
 
 		}
 		break;
+	case MENU_WIGGLE:
+		if((tester_parameters.menu_mode_on) && (FALSE == tester_parameters.tester_busy))
+		{
+			//send canbus:
+			sprintf(buffer_print, "wiggle\n",7);
+			printf("%s",buffer_print);
+
+			//wait for ack:
+			uart_status = wait_for_uart_massage_tester(&uart_command);
+
+			//get ack:
+			if(uart_command == WIGGLE_ACK_COMMAND)
+			{
+
+				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+				sprintf(cdc_buffer, "wiggle	pass\r\n");
+				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+				break;
+			}
+			else
+			{
+				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+				sprintf(cdc_buffer, "wiggle	fail\r\n");
+				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+				break;
+			}
+
+		}
+		break;
+	case MENU_START_RESET:
+			if((tester_parameters.menu_mode_on) && (FALSE == tester_parameters.tester_busy))
+			{
+				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+				sprintf(cdc_buffer, "reset UUT and press enter\r\n");
+				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+				reset_test = true;
+			}
+			break;
+	case MENU_RESET:
+		if((tester_parameters.menu_mode_on) && (FALSE == tester_parameters.tester_busy))
+		{
+
+			//send canbus:
+			sprintf(buffer_print, "reset\n",6);
+			printf("%s",buffer_print);
+
+			//wait for ack:
+			uart_status = wait_for_uart_massage_tester(&uart_command);
+
+			//get ack:
+			if(uart_command == RESET_ACK_COMMAND)
+			{
+
+				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+				sprintf(cdc_buffer, "reset button	pass\r\n");
+				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+				break;
+			}
+			else
+			{
+				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+				sprintf(cdc_buffer, "reset button	fail\r\n");
+				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+				break;
+			}
+
+		}
+		break;
 	default:
 		break;
 	}
@@ -643,6 +724,14 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* bu
 						command_type = command_list.menu_acc.type;
 					}
 					break;
+				case MENU_START_RESET:
+								if(tester_parameters.menu_mode_on)
+								{
+									memcpy(command_string, command_list.menu_start_reset.string, command_list.menu_start_reset.size);
+									command_size = command_list.menu_start_reset.size;
+									command_type = command_list.menu_start_reset.type;
+								}
+								break;
 				}
 
 				command_string[command_size] = '\0'; //append \0 to end of the command
@@ -671,13 +760,19 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* bu
 }
 
 uint8_t buf[64] = {0};
-
+extern wiggle_sensor_cnt;
 void tester_task()
 {
 
 	uint32_t size = 0;
 	bool command_found  = FALSE;
 	COMMAND_NUMBER_T command = NO_COMMAND;
+//while(1)
+//{
+//	 _time_delay(1000);            // context switch
+//	 wiggle_sensor_cnt=wiggle_sensor_cnt;
+//}
+
 
 	cdc_init();
 
@@ -688,11 +783,22 @@ void tester_task()
 	   _task_block();
 	}
 
+
+
 	while (1)
 	{
 		size += cdc_read(buf + size);
 
-		command_found = cdc_search_command(&command, buf, &size);
+		if(reset_test)
+		{
+			command_found = TRUE;
+			command = MENU_RESET;
+			reset_test = FALSE;
+		}
+		else
+		{
+			command_found = cdc_search_command(&command, buf, &size);
+		}
 
 		if(command_found)
 		{

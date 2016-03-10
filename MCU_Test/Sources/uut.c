@@ -47,7 +47,7 @@ extern _pool_id   g_out_message_pool;
 _queue_id   uut_qid;
 APPLICATION_MESSAGE_PTR_T uut_msg_ptr;
 APPLICATION_MESSAGE_PTR_T uut_msg_recieve_ptr;
-
+bool uut_reset = TRUE; // uut out from reset with this default state
 /*****************************************************************************
  * Local Types - None
  *****************************************************************************/
@@ -82,7 +82,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 	switch (command_type)
 	{
 	case ABORT_ACK_UUT_COMMAND:
-
+		uut_reset = false;//mask reset
 		memcpy(buffer, uart_ack_command_list.abort.string, uart_ack_command_list.abort.size);
 		printf("%s",buffer);
 
@@ -204,14 +204,27 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		break;
 
 	case WIGGLE_UUT_COMMAND:
-		//
+
+		//read wiggle
+
+		//check value
+		if(1) //
+		{
+			//send ack:
+			sprintf(buffer, "wiggle_ack\n");
+			printf("%s",buffer);
+		}
+		else
+		{
+			//send error ack:
+			sprintf(buffer, "error_ack\n");
+			printf("%s",buffer);
+		}
+		break;
 		break;
 	case ACC_UUT_COMMAND:
 
-
 		//read acc id
-
-
 		write_data[0] = 0xD; //ACC id register
 		I2C_DRV_MasterReceiveDataBlocking (0, &acc_device, write_data,  1, &read_data, 1, 100);
 
@@ -229,10 +242,23 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 			sprintf(buffer, "error_ack\n");
 			printf("%s",buffer);
 		}
-
-
 		break;
+	case RESET_UUT_COMMAND:
 
+		if(uut_reset)//parameter is  1, after chip out of reset. press menu change it to "0"
+		{
+			//send ack:
+			uut_reset = FALSE;
+			sprintf(buffer, "reset_ack\n");
+			printf("%s",buffer);
+		}
+		else
+		{
+			//send error ack:
+			sprintf(buffer, "error_ack\n");
+			printf("%s",buffer);
+		}
+		break;
 	default:
 		//error no command found
 		break;
@@ -300,6 +326,11 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 								sprintf(command_string, uart_command_list.acc.string, uart_command_list.acc.size);
 								command_size = uart_command_list.acc.size;
 								command_type = uart_command_list.acc.type;
+							break;
+		case RESET_UUT_COMMAND:
+								sprintf(command_string, uart_command_list.reset.string, uart_command_list.reset.size);
+								command_size = uart_command_list.reset.size;
+								command_type = uart_command_list.reset.type;
 							break;
 		}
 

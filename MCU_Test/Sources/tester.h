@@ -31,7 +31,9 @@ typedef enum {
 	MENU_CANBUS1		 ,
 	MENU_CANBUS2		 ,
 	MENU_WIGGLE  		 ,
-	MENU_ACC  		 ,
+	MENU_ACC  		     ,
+	MENU_START_RESET	 ,
+	MENU_RESET			 ,
 	MENU_EXIT			 ,
 	MAX_COMMAND			 ,
 } COMMAND_NUMBER_T;
@@ -48,6 +50,7 @@ typedef enum {
 	ABORT_ACK_COMMAND		 ,
 	A2D_ACK_COMMAND		 	 ,
 	ACC_ACK_COMMAND		 	 ,
+	RESET_ACK_COMMAND	     ,
 	MAX_UART_ACK_COMMAND     ,
 } UART_ACK_COMMAND_NUMBER_T;
 
@@ -71,6 +74,7 @@ typedef struct
 	CDC_COMMAND_T canbus2;
 	CDC_COMMAND_T wiggle;
 	CDC_COMMAND_T acc;
+	CDC_COMMAND_T reset;
 
 
 
@@ -112,6 +116,11 @@ UART_TESTER_ACK_COMMAND_LIST_T uart_tester_ack_command_list =
 				"acc_ack",
 				7,
 				ACC_ACK_COMMAND
+		},
+		{
+				"reset_ack",
+				7,
+				RESET_ACK_COMMAND
 		}
 };
 
@@ -128,6 +137,7 @@ typedef struct
 	CDC_COMMAND_T menu_canbus2;
 	CDC_COMMAND_T menu_wiggle;
 	CDC_COMMAND_T menu_acc;
+	CDC_COMMAND_T menu_start_reset;
 
 
 
@@ -185,6 +195,11 @@ COMMAND_LIST_T command_list =
 				"7",
 				1,
 				MENU_ACC
+		},
+		{
+				"8",
+				1,
+				MENU_START_RESET
 		}
 };
 
