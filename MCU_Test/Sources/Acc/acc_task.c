@@ -116,6 +116,14 @@ void Acc_task (uint32_t initial_data)
 
 	GPIO_DRV_SetPinOutput   (ACC_ENABLE       );
 	_time_delay(100);
+
+	//TODO yuval -temp till fix acc int
+	while(1)
+	{
+		_time_delay (10000);
+
+	}
+
 	AccIntEnable();
 	// try to initialize accelerometer every 10 seconds
 	while (accInit () == false)

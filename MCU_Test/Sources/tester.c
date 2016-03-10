@@ -49,6 +49,7 @@ uint8_t buffer_print[20] = {0};
 uint8_t buffer_scan[20] = {0};
 void * g_tester_wait_h;
 extern _pool_id   g_out_message_pool;
+
 _queue_id   tester_qid;
 APPLICATION_MESSAGE_PTR_T tester_msg_ptr;
 APPLICATION_MESSAGE_PTR_T uut_msg_recieve_ptr;
@@ -244,6 +245,7 @@ bool search_command_tester(UART_ACK_COMMAND_NUMBER_T* command, uint8_t* command_
 				command_size = uart_tester_ack_command_list.wiggle.size;
 				command_type = uart_tester_ack_command_list.wiggle.type;
 			}
+			break;
 		case ACC_ACK_COMMAND:
 			if(tester_parameters.menu_mode_on)
 			{
@@ -760,22 +762,15 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* bu
 }
 
 uint8_t buf[64] = {0};
-extern wiggle_sensor_cnt;
+
 void tester_task()
 {
 
 	uint32_t size = 0;
 	bool command_found  = FALSE;
 	COMMAND_NUMBER_T command = NO_COMMAND;
-//while(1)
-//{
-//	 _time_delay(1000);            // context switch
-//	 wiggle_sensor_cnt=wiggle_sensor_cnt;
-//}
-
 
 	cdc_init();
-
 
 	tester_qid = _msgq_open ((_queue_number)TESTER_QUEUE, 0);
 	if (MSGQ_NULL_QUEUE_ID == tester_qid)

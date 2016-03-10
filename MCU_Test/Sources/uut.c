@@ -44,6 +44,7 @@
  * Global Variables
  ****************************************************************************/
 extern _pool_id   g_out_message_pool;
+extern wiggle_sensor_cnt;
 _queue_id   uut_qid;
 APPLICATION_MESSAGE_PTR_T uut_msg_ptr;
 APPLICATION_MESSAGE_PTR_T uut_msg_recieve_ptr;
@@ -208,7 +209,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		//read wiggle
 
 		//check value
-		if(1) //
+		if( wiggle_sensor_cnt > 0) //
 		{
 			//send ack:
 			sprintf(buffer, "wiggle_ack\n");
@@ -220,7 +221,6 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 			sprintf(buffer, "error_ack\n");
 			printf("%s",buffer);
 		}
-		break;
 		break;
 	case ACC_UUT_COMMAND:
 
