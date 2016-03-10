@@ -27,12 +27,15 @@
 #include "tasks_list.h"
 #include "canbus.h"
 #include "ADC.h"
+#include "fsl_i2c_master_driver.h"
 /*****************************************************************************
  * Constant and Macro's - None
  *****************************************************************************/
 #define UART_PORT 1
 #define TIMEOUT 0xfffffff
 #define UART_SIZE 10
+#define UUT_ACC_DEVICE_ADDRESS 			0x1D
+#define	UUT_I2C_BAUD_RATE				400
 /*****************************************************************************
  * Global Functions Prototypes
  *****************************************************************************/
@@ -68,7 +71,13 @@ uint8_t buffer[20] = {0};
 void execute_command(UART_COMMAND_NUMBER_T command_type)
 {
 	memset(buffer,0x0,sizeof(buffer));
-	uint32_t adc_value = 0;
+
+	uint32_t adc_value = 0; //adc
+
+	uint8_t read_data =  0; //acc
+	uint8_t write_data[2] = {0}; //acc
+	i2c_device_t acc_device = {.address = UUT_ACC_DEVICE_ADDRESS,    .baudRate_kbps = UUT_I2C_BAUD_RATE}; //acc
+
 
 	switch (command_type)
 	{
@@ -162,7 +171,32 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		break;
 
 	case CANBUS1_UUT_COMMAND:
-		//
+
+		 //rxMailbxNum 			8
+		 //txMailbxNum			9
+		 //rxRemoteMailbxNum	10
+		 //txRemoteMailbxNum	11
+		 //rxRemoteId			0x0F0
+		 //txRemoteId			0x00F
+		 //rxId					0x456
+		 //txId					0x123
+		//canbus instance       1 //0 or 1
+
+		canbus_init(9, 8, 11, 10, 0x00F, 0x0F0, 0x123,0x456, 1);
+
+		uint8_t canData[8] = {0};
+		sprintf(canData, "hello");
+		uint32_t cansize = 0;
+		uint8_t candata[64]= {0};
+
+		//send ack:
+		sprintf(buffer, "canbus1_ack\n");
+		printf("%s",buffer);
+
+		canbus_recive(candata, &cansize, 1, 50000);
+		sprintf(buffer, "canbus1_ack\n");
+
+
 		break;
 
 	case CANBUS2_UUT_COMMAND:
@@ -171,6 +205,32 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 
 	case WIGGLE_UUT_COMMAND:
 		//
+		break;
+	case ACC_UUT_COMMAND:
+
+
+		//read acc id
+
+
+		write_data[0] = 0xD; //ACC id register
+		I2C_DRV_MasterReceiveDataBlocking (0, &acc_device, write_data,  1, &read_data, 1, 100);
+
+
+		//check value
+		if(read_data == 0x4A) //acc id value is 0x4A
+		{
+			//send ack:
+			sprintf(buffer, "acc_ack\n");
+			printf("%s",buffer);
+		}
+		else
+		{
+			//send error ack:
+			sprintf(buffer, "error_ack\n");
+			printf("%s",buffer);
+		}
+
+
 		break;
 
 	default:
@@ -236,7 +296,11 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 								command_size = uart_command_list.abort_ack.size;
 								command_type = uart_command_list.abort_ack.type;
 							break;
-
+		case ACC_UUT_COMMAND:
+								sprintf(command_string, uart_command_list.acc.string, uart_command_list.acc.size);
+								command_size = uart_command_list.acc.size;
+								command_type = uart_command_list.acc.type;
+							break;
 		}
 
 

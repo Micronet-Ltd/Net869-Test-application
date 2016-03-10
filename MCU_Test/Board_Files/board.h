@@ -137,7 +137,7 @@
 #define BOARD_DAC_DEMO_ADC_CHANNEL      10U
 
 /* The CAN instance used for board */
-#define BOARD_CAN_INSTANCE              2
+#define BOARD_CAN_INSTANCE              1 // should be 0 or 1
 #define BSP_CAN_DEVICE_0				0
 #define BSP_CAN_DEVICE_1				1
 

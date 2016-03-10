@@ -115,7 +115,7 @@ flexcan_time_segment_t bitRateTable75Mhz[] = {
     { 6, 3, 3,  4, 3},  /* 1   MHz */
 };
 
-void send_data(uint8_t* data)
+void send_data(uint8_t* data, uint32_t canInstance)
 {
     //uint8_t data[8];
     uint32_t result, i;
@@ -131,7 +131,7 @@ void send_data(uint8_t* data)
     }
 
     //PRINTF("\r\nFlexCAN send config");
-    result = FLEXCAN_DRV_ConfigTxMb(instance, txMailboxNum, &txInfo, txIdentifier);
+    result = FLEXCAN_DRV_ConfigTxMb(canInstance, txMailboxNum, &txInfo, txIdentifier);
     if (result)
     {
         //PRINTF("\r\nTransmit MB config error. Error Code: 0x%lx", result);
@@ -187,7 +187,9 @@ void canbus_init(
 				uint32_t rxRemoteId,
 				uint32_t txRemoteId,
 				uint32_t rxId,
-				uint32_t txId
+				uint32_t txId,
+				uint32_t canInstance
+
 			)
 {
     //PRINTF("\r\nRunning the FlexCAN loopback example.");
@@ -196,6 +198,7 @@ void canbus_init(
     flexcan_user_config_t flexcanData;
     uint32_t canPeClk;
 
+    instance = canInstance;
 	 // Select mailbox number
 	rxMailboxNum = rxMailbxNum;//8;
 	txMailboxNum = txMailbxNum;//9;
@@ -267,7 +270,7 @@ void canbus_init(
 
 	FLEXCAN_DRV_SetRxMaskType(instance, kFlexCanRxMaskGlobal);
 
-	result = FLEXCAN_DRV_SetRxMbGlobalMask(instance, kFlexCanMsgIdStd, 0x123);
+	result = FLEXCAN_DRV_SetRxMbGlobalMask(instance, kFlexCanMsgIdStd,rxId);// 0x123);
 	if (result)
 	{
 		numErrors++;
@@ -283,7 +286,7 @@ void canbus_init(
 	}
 
 	// Extern ID
-	result = FLEXCAN_DRV_SetRxIndividualMask(instance, kFlexCanMsgIdExt, rxMailboxNum, 0x123);
+	result = FLEXCAN_DRV_SetRxIndividualMask(instance, kFlexCanMsgIdExt, rxMailboxNum, rxId);//0x123);//rxId);//
 	if(result)
 	{
 		numErrors++;
@@ -292,15 +295,15 @@ void canbus_init(
 }
 
 //return 1 pass/0 fail
-bool canbus_recive(uint8_t* data,uint32_t* size, uint32_t timeout)
+bool canbus_recive(uint8_t* data,uint32_t* size, uint32_t canInstance, uint32_t timeout)
 {
 	uint32_t result;
 	flexcan_msgbuff_t rxMb;
 	uint32_t timeout_canbus = 0;
 
-	 result = FLEXCAN_DRV_RxMessageBuffer(instance, rxMailboxNum,&rxMb);
+	 result = FLEXCAN_DRV_RxMessageBuffer(canInstance, rxMailboxNum,&rxMb);
 
-	while((FLEXCAN_DRV_GetReceiveStatus(instance, rxMailboxNum) != kStatus_FLEXCAN_Success) || (timeout_canbus < timeout))
+	while((FLEXCAN_DRV_GetReceiveStatus(canInstance, rxMailboxNum) != kStatus_FLEXCAN_Success) || (timeout_canbus < timeout))
 	{
 		 _time_delay(1);
 		 timeout_canbus++;
@@ -320,7 +323,7 @@ bool canbus_recive(uint8_t* data,uint32_t* size, uint32_t timeout)
 	return TRUE;
 }
 
-canbus_transmit(uint8_t* data)
+canbus_transmit(uint8_t* data, uint32_t canInstance)
 {
-	send_data(data);
+	send_data(data,canInstance );
 }

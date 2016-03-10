@@ -137,6 +137,10 @@ void menu_display()
 	sprintf(buf, "6. wiggle sensor\r\n");
 	cdc_write((uint8_t*)buf, strlen(buf));
 
+	memset(buf,0x0,sizeof(buf));
+	sprintf(buf, "7. acc sensor\r\n");
+	cdc_write((uint8_t*)buf, strlen(buf));
+
 }
 
 void clear_screan()
@@ -185,6 +189,7 @@ bool search_command_tester(UART_ACK_COMMAND_NUMBER_T* command, uint8_t* command_
 	char command_string[20] = {0};
 	uint8_t command_size = 0;
 
+	*command = NO_ACK_COMMAND;
 
 	//check if there is space for minimum command:
 	for(j = 0; j < MAX_UART_ACK_COMMAND; j++)
@@ -234,6 +239,13 @@ bool search_command_tester(UART_ACK_COMMAND_NUMBER_T* command, uint8_t* command_
 				command_size = uart_tester_ack_command_list.wiggle.size;
 				command_type = uart_tester_ack_command_list.wiggle.type;
 			}
+		case ACC_ACK_COMMAND:
+			if(tester_parameters.menu_mode_on)
+			{
+				sprintf(command_string, uart_tester_ack_command_list.acc.string, uart_tester_ack_command_list.acc.size);
+				command_size = uart_tester_ack_command_list.acc.size;
+				command_type = uart_tester_ack_command_list.acc.type;
+			}
 			break;
 
 		}
@@ -257,7 +269,7 @@ bool search_command_tester(UART_ACK_COMMAND_NUMBER_T* command, uint8_t* command_
 
 bool wait_for_uart_massage_tester(UART_ACK_COMMAND_NUMBER_T* command )
 {
-	*command = NO__ACK_COMMAND;
+	*command = NO_ACK_COMMAND;
 	bool command_found = false;
 
 	memset(buffer_scan,0x0,sizeof(buffer_scan));
@@ -281,7 +293,7 @@ void tester_parser(COMMAND_NUMBER_T command)
 	char cdc_buffer[30] = {0};
 	bool uart_status = 0;
 	 _time_delay(10);            // context switch
-	UART_ACK_COMMAND_NUMBER_T uart_command = NO__ACK_COMMAND;
+	UART_ACK_COMMAND_NUMBER_T uart_command = NO_ACK_COMMAND;
 
 	memset(buffer_print,0x0,sizeof(buffer_print));
 
@@ -424,9 +436,22 @@ void tester_parser(COMMAND_NUMBER_T command)
 			if(uart_command == CANBUS1_ACK_COMMAND)
 			{
 				//send canbus:
-				//wait for canbus
-				//if ok send cdc ok back:
-				//
+				 //rxMailbxNum 			8
+				 //txMailbxNum			9
+				 //rxRemoteMailbxNum	10
+				 //txRemoteMailbxNum	11
+				 //rxRemoteId			0x0F0
+				 //txRemoteId			0x00F
+				 //rxId					0x456
+				 //txId					0x123
+				//canbus instance       1 //0 or 1
+
+				canbus_init(8, 9, 10, 11, 0x0F0, 0x00F, 0x456, 0x123, 1);
+				uint8_t canData[8] = {0};
+				sprintf(canData, "hello");
+
+				canbus_transmit(canData,1);
+
 			}
 
 		}
@@ -457,6 +482,35 @@ void tester_parser(COMMAND_NUMBER_T command)
 				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
 				break;
 			}
+		}
+		break;
+	case MENU_ACC:
+		if((tester_parameters.menu_mode_on) && (FALSE == tester_parameters.tester_busy))
+		{
+			//send canbus:
+			sprintf(buffer_print, "acc\n",4);
+			printf("%s",buffer_print);
+
+			//wait for ack:
+			uart_status = wait_for_uart_massage_tester(&uart_command);
+
+			//get ack:
+			if(uart_command == ACC_ACK_COMMAND)
+			{
+
+				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+				sprintf(cdc_buffer, "ACC	pass\r\n");
+				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+				break;
+			}
+			else
+			{
+				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+				sprintf(cdc_buffer, "ACC	fail\r\n");
+				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+				break;
+			}
+
 		}
 		break;
 	default:
@@ -581,7 +635,14 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* bu
 						command_type = command_list.menu_wiggle.type;
 					}
 					break;
-
+				case MENU_ACC:
+					if(tester_parameters.menu_mode_on)
+					{
+						memcpy(command_string, command_list.menu_acc.string, command_list.menu_acc.size);
+						command_size = command_list.menu_acc.size;
+						command_type = command_list.menu_acc.type;
+					}
+					break;
 				}
 
 				command_string[command_size] = '\0'; //append \0 to end of the command
@@ -620,15 +681,6 @@ void tester_task()
 
 	cdc_init();
 
-	 //rxMailbxNum 			8
-	 //txMailbxNum			9
-	 //rxRemoteMailbxNum	10
-	 //txRemoteMailbxNum	11
-	 //rxRemoteId			0x0F0
-	 //txRemoteId			0x00F
-	 //rxId					0x456
-	 //txId					0x123
-	//canbus_init(8, 9, 10, 11, 0x0F0, 0x00F, 0x456, 0x123);
 
 	tester_qid = _msgq_open ((_queue_number)TESTER_QUEUE, 0);
 	if (MSGQ_NULL_QUEUE_ID == tester_qid)
