@@ -22,24 +22,23 @@
 
 //command getting from cdc uart:
 typedef enum {
-	NO_COMMAND		=	0,
-	TEST_COMMAND		 ,
-	MENU_COMMAND         ,
 	MENU_UART			 ,
 	MENU_J1708			 ,
 	MENU_A2D			 ,
+	MENU_ACC  		     ,
 	MENU_CANBUS1		 ,
 	MENU_CANBUS2		 ,
+	MAX_AUTO_TEST	 	 ,  //put all auto tests above, put all manual tests below:
 	MENU_WIGGLE  		 ,
-	MENU_ACC  		     ,
-	MENU_START_RESET	 ,
-	MENU_RESET			 ,
+	RELEASE_COMMAND		 ,
+	MENU_COMMAND         ,
 	MENU_EXIT			 ,
+	NO_COMMAND			 ,
 	MAX_COMMAND			 ,
 } COMMAND_NUMBER_T;
 
 
-//command getting from cdc uart:
+//command acknowledge from uut side:
 typedef enum {
 	NO_ACK_COMMAND		=	0,
 	UART_ACK_COMMAND		 ,
@@ -47,15 +46,11 @@ typedef enum {
 	CANBUS1_ACK_COMMAND		 ,
 	CANBUS2_ACK_COMMAND      ,
 	WIGGLE_ACK_COMMAND		 ,
-	ABORT_ACK_COMMAND		 ,
 	A2D_ACK_COMMAND		 	 ,
 	ACC_ACK_COMMAND		 	 ,
-	RESET_ACK_COMMAND	     ,
 	MAX_UART_ACK_COMMAND     ,
 } UART_ACK_COMMAND_NUMBER_T;
 
-
-#define MAX_COMMAND_SIZE  5  //DEBUG is 5 character which is max size
 
 typedef struct
 {
@@ -74,7 +69,6 @@ typedef struct
 	CDC_COMMAND_T canbus2;
 	CDC_COMMAND_T wiggle;
 	CDC_COMMAND_T acc;
-	CDC_COMMAND_T reset;
 
 
 
@@ -116,15 +110,10 @@ UART_TESTER_ACK_COMMAND_LIST_T uart_tester_ack_command_list =
 				"acc_ack",
 				7,
 				ACC_ACK_COMMAND
-		},
-		{
-				"reset_ack",
-				7,
-				RESET_ACK_COMMAND
 		}
 };
 
-
+//usb menu commands:
 typedef struct
 {
 	CDC_COMMAND_T test;
@@ -137,19 +126,18 @@ typedef struct
 	CDC_COMMAND_T menu_canbus2;
 	CDC_COMMAND_T menu_wiggle;
 	CDC_COMMAND_T menu_acc;
-	CDC_COMMAND_T menu_start_reset;
 
 
 
 } COMMAND_LIST_T;
 
-//usb side commands:
+//usb menu commands:
 COMMAND_LIST_T command_list =
 {
 		{
 				"test",
 				4,
-				TEST_COMMAND
+				RELEASE_COMMAND
 		},
 		{
 				"menu",
@@ -195,11 +183,6 @@ COMMAND_LIST_T command_list =
 				"7",
 				1,
 				MENU_ACC
-		},
-		{
-				"8",
-				1,
-				MENU_START_RESET
 		}
 };
 

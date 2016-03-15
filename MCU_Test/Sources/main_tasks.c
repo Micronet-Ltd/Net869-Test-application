@@ -15,7 +15,7 @@
 #include "fpga_api.h"
 
 #include "virtual_com.h"
-
+#include "canbus.h"
 //#define printf
 
 
@@ -25,7 +25,7 @@ void MQX_PORTC_IRQHandler(void);
 
 #define	MAIN_TASK_SLEEP_PERIOD	10			// 10 mSec sleep
 #define TIME_ONE_SECOND_PERIOD	((int) (1000 / MAIN_TASK_SLEEP_PERIOD))
-
+#define EVENT_SCAN 0x20 //scan event
 static i2c_master_state_t i2c_master;
 
 _pool_id   g_out_message_pool;
@@ -35,6 +35,8 @@ uint32_t wiggle_sensor_cnt;
 
 _task_id   g_TASK_ids[NUM_TASKS] = { 0 };
 
+extern void* uut_scan_event_h;
+extern void* tester_scan_event_h;
 
 void Main_task( uint32_t initial_data ) {
 
@@ -92,9 +94,6 @@ void Main_task( uint32_t initial_data ) {
 
 //	BOARD_InitOsc0();
 //	CLOCK_SetBootConfig_Run ();
-
-	//Enable CAN
-	GPIO_DRV_SetPinOutput(CAN_ENABLE);
 
 
 
@@ -188,6 +187,12 @@ void Main_task( uint32_t initial_data ) {
 		//print yuvalf("\nMain Could not create J1708_RX_TASK\n");
 	}
 
+	g_TASK_ids[SCAN_TASK] = _task_create(0, SCAN_TASK, 0);
+	if (g_TASK_ids[SCAN_TASK] == MQX_NULL_TASK_ID)
+	{
+		//print yuvalf("\nMain Could not create ACC_TASK\n");
+	}
+
 	g_TASK_ids[TESTER_TASK] = _task_create(0, TESTER_TASK, 0 );
 	if (g_TASK_ids[TESTER_TASK] == MQX_NULL_TASK_ID)
 	{
@@ -212,6 +217,11 @@ void Main_task( uint32_t initial_data ) {
 		//print yuvalf("\nMain Could not create ACC_TASK\n");
 	}
 
+
+
+	//Enable CAN
+	GPIO_DRV_SetPinOutput(CAN_ENABLE);
+
     //Disable CAN termination
     GPIO_DRV_ClearPinOutput(CAN1_TERM_ENABLE);
     GPIO_DRV_ClearPinOutput(CAN2_TERM_ENABLE);
@@ -219,10 +229,21 @@ void Main_task( uint32_t initial_data ) {
     //Initialize CAN sample
     configure_can_pins(0);
     configure_can_pins(1);
-
+/*
     _time_delay (1000);
-
-
+    //send canbus:
+	 //rxMailbxNum 			8
+	 //txMailbxNum			9
+	 //rxRemoteMailbxNum	10
+	 //txRemoteMailbxNum	11
+	 //rxRemoteId			0x0F0
+	 //txRemoteId			0x00F
+	 //rxId					0x456
+	 //txId					0x123
+	//canbus instance       1 //0 or 1
+	canbus_init(8, 9,  0x123,0x123 , 0);
+    _time_delay (1000);
+*/
    // printf("\nMain Task: Loop \n");
 
 
@@ -318,6 +339,37 @@ void MQX_PORTC_IRQHandler(void)
 		GPIO_DRV_ClearPinIntFlag(FPGA_GPIO0);
 		_event_set(g_J1708_event_h, EVENT_J1708_RX);
 	}
+}
+
+uint8_t scan_string[20];
+
+void scan_task()
+{
+
+	while(1)
+	{
+		scanf(" %s", &scan_string);
+
+		if(!strcmp(scan_string,"MCU_started\n"))
+		{
+
+			memset(scan_string,0x0,sizeof(scan_string));
+			sprintf(scan_string, "Reset Button pressed\r\n");
+			cdc_write((uint8_t*)scan_string, strlen(scan_string));
+		}
+		else
+		{
+		//note there is buffer from scan:
+		_event_set(uut_scan_event_h, 2);
+		_event_set(tester_scan_event_h, 2);
+
+		}
+	}
+}
+
+uint8_t* wait_for_recieve_massage()
+{
+	return scan_string;
 }
 
 //END FILE

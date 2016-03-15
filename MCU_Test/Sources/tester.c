@@ -24,6 +24,7 @@
 #include "virtual_com.h"
 #include "fsl_uart_driver.h"
 #include "uart_configuration.h"
+#include "fsl_flexcan_hal.h"
 
 #include "tasks_list.h"
 #include "canbus.h"
@@ -47,15 +48,15 @@ char* strnstr(const char *s, const char *find, size_t slen);
  ****************************************************************************/
 uint8_t buffer_print[20] = {0};
 uint8_t buffer_scan[20] = {0};
-void * g_tester_wait_h;
+void* tester_scan_event_h;
 extern _pool_id   g_out_message_pool;
+
+
 
 _queue_id   tester_qid;
 APPLICATION_MESSAGE_PTR_T tester_msg_ptr;
 APPLICATION_MESSAGE_PTR_T uut_msg_recieve_ptr;
-bool reset_test = false;
-//bool static tester_side = FALSE;
-//bool static uut_side	= FALSE;
+
 /*****************************************************************************
  * Local Types - None
  *****************************************************************************/
@@ -141,10 +142,6 @@ void menu_display()
 
 	memset(buf,0x0,sizeof(buf));
 	sprintf(buf, "7. acc sensor\r\n");
-	cdc_write((uint8_t*)buf, strlen(buf));
-
-	memset(buf,0x0,sizeof(buf));
-	sprintf(buf, "8. reset bottun\r\n");
 	cdc_write((uint8_t*)buf, strlen(buf));
 
 }
@@ -254,14 +251,6 @@ bool search_command_tester(UART_ACK_COMMAND_NUMBER_T* command, uint8_t* command_
 				command_type = uart_tester_ack_command_list.acc.type;
 			}
 			break;
-		case RESET_ACK_COMMAND:
-			if(tester_parameters.menu_mode_on)
-			{
-				sprintf(command_string, uart_tester_ack_command_list.reset.string, uart_tester_ack_command_list.reset.size);
-				command_size = uart_tester_ack_command_list.reset.size;
-				command_type = uart_tester_ack_command_list.reset.type;
-			}
-			break;
 
 		}
 
@@ -288,7 +277,11 @@ bool wait_for_uart_massage_tester(UART_ACK_COMMAND_NUMBER_T* command )
 	bool command_found = false;
 
 	memset(buffer_scan,0x0,sizeof(buffer_scan));
-	scanf(" %s", &buffer_scan);
+	//scanf(" %s", &buffer_scan);
+	_event_wait_all(tester_scan_event_h, 2, 0);
+	_event_clear(tester_scan_event_h, 2);
+	strcpy(buffer_scan,wait_for_recieve_massage());
+
 
 	//check if there is valid massage:
 	command_found = search_command_tester(command, buffer_scan);
@@ -315,19 +308,19 @@ void tester_parser(COMMAND_NUMBER_T command)
 	switch (command)
 	{
 	case MENU_COMMAND:
+
 		if(FALSE == tester_parameters.menu_mode_on)
 		{
+
 			tester_parameters.menu_mode_on = TRUE;
 
 			if(FALSE == tester_parameters.uut_abort)
 			{
-				//send uut abort command:
-				//memset(buffer_print,0x0,sizeof(buffer_print));
-				//memcpy(buffer_print, uart_tester_command_list.abort.string, uart_tester_command_list.abort.size);
-				sprintf(buffer_print, "abort\n",6);
-				printf("%s",buffer_print);
 				tester_parameters.uut_abort = TRUE;
+				_task_abort(g_TASK_ids[UUT_TASK]);
 			}
+
+
 
 			//configure tester task waiting for response from UUT if not busy.
 			menu_display();
@@ -438,11 +431,33 @@ void tester_parser(COMMAND_NUMBER_T command)
 		}
 		break;
 	case MENU_CANBUS1:
+	case MENU_CANBUS2:
 		if((tester_parameters.menu_mode_on) && (FALSE == tester_parameters.tester_busy))
 		{
+
+			if(MENU_CANBUS1 == command)
+			{
+				canbus_init(9, 8,  0x123,0x456 , 0);
+			}
+			else
+			{
+				canbus_init(9, 8,  0x123,0x456 , 1);
+			}
+
 			//send canbus:
-			sprintf(buffer_print, "canbus1\n",7);
+			if(MENU_CANBUS1 == command)
+			{
+				sprintf(buffer_print, "canbus1\n",7);
+			}
+			else
+			{
+				sprintf(buffer_print, "canbus2\n",7);
+			}
+
 			printf("%s",buffer_print);
+			uint32_t cansize = 0;
+			uint8_t candata[64]= {0};
+			uint8_t* candata_rec;
 
 			//wait for ack:
 			uart_status = wait_for_uart_massage_tester(&uart_command);
@@ -450,24 +465,82 @@ void tester_parser(COMMAND_NUMBER_T command)
 			//get ack:
 			if(uart_command == CANBUS1_ACK_COMMAND)
 			{
-				//send canbus:
-				 //rxMailbxNum 			8
-				 //txMailbxNum			9
-				 //rxRemoteMailbxNum	10
-				 //txRemoteMailbxNum	11
-				 //rxRemoteId			0x0F0
-				 //txRemoteId			0x00F
-				 //rxId					0x456
-				 //txId					0x123
-				//canbus instance       1 //0 or 1
 
-				canbus_init(8, 9, 10, 11, 0x0F0, 0x00F, 0x456, 0x123, 1);
+
+				uint32_t i;
 				uint8_t canData[8] = {0};
-				sprintf(canData, "hello");
+				sprintf(canData, "canbus1");
 
-				canbus_transmit(canData,1);
+				//delay to uut to be ready to recieve:
+
+
+				canbus_transmit(canData,7);
+
+				sprintf(cdc_buffer, "1subnac");
+
+				flexcan_msgbuff_t can_buff;
+
+
+				canbus_recive(&can_buff, &cansize, OSA_WAIT_FOREVER);
+
+
+				if(!strcmp(can_buff.data,cdc_buffer))
+				{
+					memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+					sprintf(cdc_buffer, "canbus1	pass\r\n");
+					cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+					canbus_deinit(0);
+					break;
+				}
+			}
+
+
+			if(uart_command == CANBUS2_ACK_COMMAND)
+			{
+
+
+				uint32_t i;
+				uint8_t canData[8] = {0};
+				sprintf(canData, "canbus2");
+
+				//delay to uut to be ready to recieve:
+
+
+				canbus_transmit(canData,7);
+
+				sprintf(cdc_buffer, "2subnac");
+
+				flexcan_msgbuff_t can_buff;
+
+
+				canbus_recive(&can_buff, &cansize, OSA_WAIT_FOREVER);
+
+
+				if(!strcmp(can_buff.data,cdc_buffer))
+				{
+					memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+					sprintf(cdc_buffer, "canbus2	pass\r\n");
+					cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+					canbus_deinit(1);
+					break;
+				}
+			}
+
+			memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+			if(MENU_CANBUS1 == command)
+			{
+				sprintf(cdc_buffer, "canbus1	fail\r\n");
+				canbus_deinit(0);
+			}
+			else
+			{
+				sprintf(cdc_buffer, "canbus2	fail\r\n");
+				canbus_deinit(1);
 
 			}
+
+			cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+
 
 		}
 		break;
@@ -557,45 +630,7 @@ void tester_parser(COMMAND_NUMBER_T command)
 
 		}
 		break;
-	case MENU_START_RESET:
-			if((tester_parameters.menu_mode_on) && (FALSE == tester_parameters.tester_busy))
-			{
-				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-				sprintf(cdc_buffer, "reset UUT and press enter\r\n");
-				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
-				reset_test = true;
-			}
-			break;
-	case MENU_RESET:
-		if((tester_parameters.menu_mode_on) && (FALSE == tester_parameters.tester_busy))
-		{
 
-			//send canbus:
-			sprintf(buffer_print, "reset\n",6);
-			printf("%s",buffer_print);
-
-			//wait for ack:
-			uart_status = wait_for_uart_massage_tester(&uart_command);
-
-			//get ack:
-			if(uart_command == RESET_ACK_COMMAND)
-			{
-
-				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-				sprintf(cdc_buffer, "reset button	pass\r\n");
-				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
-				break;
-			}
-			else
-			{
-				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-				sprintf(cdc_buffer, "reset button	fail\r\n");
-				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
-				break;
-			}
-
-		}
-		break;
 	default:
 		break;
 	}
@@ -603,12 +638,6 @@ void tester_parser(COMMAND_NUMBER_T command)
 
 
 
-
-
-void release_tester()
-{
-	 _event_set(g_tester_wait_h, EVENT_TESTER);
-}
 
 /******************************************************************************
  *
@@ -633,7 +662,7 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* bu
 	uint32_t i = 0;
 
 	COMMAND_NUMBER_T command_type = NO_COMMAND;
-	char command_string[MAX_COMMAND_SIZE +1] = {0};
+	char command_string[30] = {0};
 	uint8_t command_size = 0;
 
 	for(i = 0; i < *buffer_size; i++)
@@ -644,9 +673,12 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* bu
 			//check if there is space for minimum command:
 			for(j = 0; j < MAX_COMMAND; j++)
             {
+				memset(command_string,0x0,sizeof(command_string));
+				command_size = 0;
+
 				switch (j)
 				{
-				case TEST_COMMAND:
+				case RELEASE_COMMAND:
 					memcpy(command_string, command_list.test.string, command_list.test.size);
 					command_size = command_list.test.size;
 					command_type = command_list.test.type;
@@ -726,14 +758,7 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* bu
 						command_type = command_list.menu_acc.type;
 					}
 					break;
-				case MENU_START_RESET:
-								if(tester_parameters.menu_mode_on)
-								{
-									memcpy(command_string, command_list.menu_start_reset.string, command_list.menu_start_reset.size);
-									command_size = command_list.menu_start_reset.size;
-									command_type = command_list.menu_start_reset.type;
-								}
-								break;
+
 				}
 
 				command_string[command_size] = '\0'; //append \0 to end of the command
@@ -763,8 +788,23 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* bu
 
 uint8_t buf[64] = {0};
 
+void run_all()
+{
+	uint32_t i = 0;
+
+	for(i = 0; i < MAX_AUTO_TEST; i++)
+	{
+		tester_parser(i);
+	}
+}
+
+
 void tester_task()
 {
+
+
+
+
 
 	uint32_t size = 0;
 	bool command_found  = FALSE;
@@ -778,27 +818,35 @@ void tester_task()
 	   _task_block();
 	}
 
+	_mqx_uint event_result;
+
+	event_result = _event_create("tester_scan");
+	if(MQX_OK != event_result){	}
+
+	event_result = _event_open("tester_scan", &tester_scan_event_h);
+	if(MQX_OK != event_result){	}
 
 
 	while (1)
 	{
+
 		size += cdc_read(buf + size);
 
-		if(reset_test)
-		{
-			command_found = TRUE;
-			command = MENU_RESET;
-			reset_test = FALSE;
-		}
-		else
-		{
-			command_found = cdc_search_command(&command, buf, &size);
-		}
+		command_found = cdc_search_command(&command, buf, &size);
+
 
 		if(command_found)
 		{
 			//send massage to tester.c (tester task will start debug/release).
-			tester_parser(command);
+			if(RELEASE_COMMAND == command)
+			{
+				//run all tests:
+				run_all();
+			}
+			else
+			{
+				tester_parser(command);
+			}
 			//example word led to tester - tester check is debug than use word led.
 			//if tester in middle of presses so ignore word
 		}

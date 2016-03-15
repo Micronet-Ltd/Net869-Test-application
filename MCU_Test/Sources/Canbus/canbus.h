@@ -24,13 +24,15 @@
 void canbus_init(
 				uint32_t rxMailbxNum,
 				uint32_t txMailbxNum,
-				uint32_t rxRemoteMailbxNum,
-				uint32_t txRemoteMailbxNum,
-				uint32_t rxRemoteId,
-				uint32_t txRemoteId,
+				//uint32_t rxRemoteMailbxNum,
+				//uint32_t txRemoteMailbxNum,
+				//uint32_t rxRemoteId,
+				//uint32_t txRemoteId,
 				uint32_t rxId,
 				uint32_t txId,
 				uint32_t canInstance
 			);
+
+void canbus_deinit(uint32_t canInstance);
 
 #endif //_CANBUS_H

@@ -31,10 +31,7 @@ typedef enum {
 	CANBUS1_UUT_COMMAND		 ,
 	CANBUS2_UUT_COMMAND      ,
 	WIGGLE_UUT_COMMAND		 ,
-	ABORT_UUT_COMMAND        ,
-	ABORT_ACK_UUT_COMMAND    ,
 	ACC_UUT_COMMAND			 ,
-	RESET_UUT_COMMAND ,
 	MAX_UUT_COMMAND          ,
 } UART_COMMAND_NUMBER_T;
 
@@ -56,10 +53,7 @@ typedef struct
 	UART_COMMAND_T canbus1;
 	UART_COMMAND_T canbus2;
 	UART_COMMAND_T wiggle;
-	UART_COMMAND_T abort;
-	UART_COMMAND_T abort_ack;
 	UART_COMMAND_T acc;
-	UART_COMMAND_T reset;
 
 
 } UART_COMMAND_LIST_T;
@@ -97,24 +91,9 @@ UART_COMMAND_LIST_T uart_command_list =
 				WIGGLE_UUT_COMMAND
 		},
 		{
-				"abort",
-				5,
-				ABORT_ACK_UUT_COMMAND
-		},
-		{
-				"abort_ack",
-				9,
-				ABORT_UUT_COMMAND
-		},
-		{
 				"acc",
 				3,
 				ACC_UUT_COMMAND
-		},
-		{
-				"reset",
-				5,
-				RESET_UUT_COMMAND
 		}
 };
 
@@ -150,11 +129,6 @@ UART_COMMAND_LIST_T uart_ack_command_list =
 				"wiggle_ack\n",
 				11,
 				WIGGLE_UUT_COMMAND
-		},
-		{
-				"abort_ack\n",
-				10,
-				ABORT_ACK_UUT_COMMAND
 		}
 };
 

@@ -28,6 +28,7 @@
 #include "canbus.h"
 #include "ADC.h"
 #include "fsl_i2c_master_driver.h"
+#include "fsl_flexcan_hal.h"
 /*****************************************************************************
  * Constant and Macro's - None
  *****************************************************************************/
@@ -36,6 +37,9 @@
 #define UART_SIZE 10
 #define UUT_ACC_DEVICE_ADDRESS 			0x1D
 #define	UUT_I2C_BAUD_RATE				400
+#define ACC_ID_VALUE 0x4A
+#define MIN_A2D_VALUE 3800
+#define MAX_A2D_VALUE 4400
 /*****************************************************************************
  * Global Functions Prototypes
  *****************************************************************************/
@@ -45,10 +49,13 @@
  ****************************************************************************/
 extern _pool_id   g_out_message_pool;
 extern wiggle_sensor_cnt;
+
+
 _queue_id   uut_qid;
 APPLICATION_MESSAGE_PTR_T uut_msg_ptr;
 APPLICATION_MESSAGE_PTR_T uut_msg_recieve_ptr;
 bool uut_reset = TRUE; // uut out from reset with this default state
+void* uut_scan_event_h;
 /*****************************************************************************
  * Local Types - None
  *****************************************************************************/
@@ -78,21 +85,13 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 	uint8_t read_data =  0; //acc
 	uint8_t write_data[2] = {0}; //acc
 	i2c_device_t acc_device = {.address = UUT_ACC_DEVICE_ADDRESS,    .baudRate_kbps = UUT_I2C_BAUD_RATE}; //acc
-
+	uint32_t cansize;
+	uint8_t candata[64]= {0};
+	uint8_t* can_data_recieve;
+	uint8_t candata_compare[8]= {0};
 
 	switch (command_type)
 	{
-	case ABORT_ACK_UUT_COMMAND:
-		uut_reset = false;//mask reset
-		memcpy(buffer, uart_ack_command_list.abort.string, uart_ack_command_list.abort.size);
-		printf("%s",buffer);
-
-	break;
-	case ABORT_UUT_COMMAND:
-
-	  _task_block();
-	break;
-
 
 	case UART_UUT_COMMAND:
 
@@ -149,14 +148,12 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		break;
 	case A2D_UUT_COMMAND:
 
-
-
 		//read a2d
 		ADC_sample_input (kADC_ANALOG_IN1);
 		adc_value =  ADC_get_value (kADC_ANALOG_IN1);
 
 		//check value
-		if((adc_value > 3800) && (adc_value < 4400))
+		if((adc_value > MIN_A2D_VALUE) && (adc_value < MAX_A2D_VALUE))
 		{
 			//send ack:
 			sprintf(buffer, "a2d_ack\n");
@@ -172,36 +169,73 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		break;
 
 	case CANBUS1_UUT_COMMAND:
+	case CANBUS2_UUT_COMMAND:
 
 		 //rxMailbxNum 			8
 		 //txMailbxNum			9
-		 //rxRemoteMailbxNum	10
-		 //txRemoteMailbxNum	11
-		 //rxRemoteId			0x0F0
-		 //txRemoteId			0x00F
 		 //rxId					0x456
 		 //txId					0x123
 		//canbus instance       1 //0 or 1
+		if(CANBUS1_UUT_COMMAND == command_type)
+		{
+			canbus_init(8, 9,  0x456,0x123 , 0);
+			sprintf(candata_compare, "canbus1");
+			sprintf(buffer, "canbus1_ack\n");
+		}
+		else
+		{
+			canbus_init(8, 9,  0x456,0x123 , 1);
+			sprintf(candata_compare, "canbus2");
+			sprintf(buffer, "canbus2_ack\n");
+		}
 
-		canbus_init(9, 8, 11, 10, 0x00F, 0x0F0, 0x123,0x456, 1);
 
-		uint8_t canData[8] = {0};
-		sprintf(canData, "hello");
-		uint32_t cansize = 0;
-		uint8_t candata[64]= {0};
-
-		//send ack:
-		sprintf(buffer, "canbus1_ack\n");
 		printf("%s",buffer);
+		uint32_t i;
+		for(i=0;i<10000;i++)
+		{
+			i=i;
+		}
+		flexcan_msgbuff_t can_buff;
 
-		canbus_recive(candata, &cansize, 1, 50000);
-		sprintf(buffer, "canbus1_ack\n");
+		canbus_recive(&can_buff, &cansize,  OSA_WAIT_FOREVER);
+		for(i=0;i<10000;i++)
+		{
+			i=i;
+		}
+		//delay for tester to be ready to recieve canbus:
 
+		if(!strcmp(can_buff.data,candata_compare))
+		{
+			if(CANBUS1_UUT_COMMAND == command_type)
+			{
+				sprintf(candata_compare, "1subnac");
+			}
+			else
+			{
+				sprintf(candata_compare, "2subnac");
+			}
+			for(i=0;i<1000000;)
+					{
+						i++;
+					}
+			canbus_transmit(candata_compare,7);
+		}
+		for(i=0;i<10000;)
+		{
+			i++;
+		}
+		//send back
+		_time_delay(1000);
 
-		break;
-
-	case CANBUS2_UUT_COMMAND:
-		//
+		if(CANBUS1_UUT_COMMAND == command_type)
+		{
+			canbus_deinit(0);
+		}
+		else
+		{
+			canbus_deinit(1);
+		}
 		break;
 
 	case WIGGLE_UUT_COMMAND:
@@ -230,7 +264,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 
 
 		//check value
-		if(read_data == 0x4A) //acc id value is 0x4A
+		if(read_data == ACC_ID_VALUE) //acc id value is 0x4A
 		{
 			//send ack:
 			sprintf(buffer, "acc_ack\n");
@@ -243,22 +277,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 			printf("%s",buffer);
 		}
 		break;
-	case RESET_UUT_COMMAND:
 
-		if(uut_reset)//parameter is  1, after chip out of reset. press menu change it to "0"
-		{
-			//send ack:
-			uut_reset = FALSE;
-			sprintf(buffer, "reset_ack\n");
-			printf("%s",buffer);
-		}
-		else
-		{
-			//send error ack:
-			sprintf(buffer, "error_ack\n");
-			printf("%s",buffer);
-		}
-		break;
 	default:
 		//error no command found
 		break;
@@ -312,26 +331,13 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 				command_size = uart_command_list.wiggle.size;
 				command_type = uart_command_list.wiggle.type;
 			break;
-		case ABORT_ACK_UUT_COMMAND:
-							sprintf(command_string, uart_command_list.abort.string, uart_command_list.abort.size);
-							command_size = uart_command_list.abort.size;
-							command_type = uart_command_list.abort.type;
-						break;
-		case ABORT_UUT_COMMAND:
-								sprintf(command_string, uart_command_list.abort_ack.string, uart_command_list.abort_ack.size);
-								command_size = uart_command_list.abort_ack.size;
-								command_type = uart_command_list.abort_ack.type;
-							break;
+
 		case ACC_UUT_COMMAND:
 								sprintf(command_string, uart_command_list.acc.string, uart_command_list.acc.size);
 								command_size = uart_command_list.acc.size;
 								command_type = uart_command_list.acc.type;
 							break;
-		case RESET_UUT_COMMAND:
-								sprintf(command_string, uart_command_list.reset.string, uart_command_list.reset.size);
-								command_size = uart_command_list.reset.size;
-								command_type = uart_command_list.reset.type;
-							break;
+
 		}
 
 
@@ -350,6 +356,7 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 
 uint8_t command_uart[20];
 
+//wait till getting massage from scanf:
 bool wait_for_uart_massage_uut(UART_COMMAND_NUMBER_T* command , uint32_t* size)
 {
 
@@ -359,8 +366,11 @@ bool wait_for_uart_massage_uut(UART_COMMAND_NUMBER_T* command , uint32_t* size)
 
 	while(1)
 	{
-		scanf(" %s", &command_uart);
+		//wait till get massage from scan task:
+		_event_wait_all(uut_scan_event_h, 2, 0);
+		_event_clear(uut_scan_event_h, 2);
 
+		strcpy(command_uart,wait_for_recieve_massage());
 		//check if there is valid massage:
 		command_found = search_command_uut(command, command_uart);
 		if(command_found)
@@ -378,6 +388,13 @@ void uut_task()
 	uint32_t size = 0;
 	bool status = false;
 	UART_COMMAND_NUMBER_T command;
+	_mqx_uint event_result;
+
+	event_result = _event_create("uut_scan");
+	if(MQX_OK != event_result){	}
+
+	event_result = _event_open("uut_scan", &uut_scan_event_h);
+	if(MQX_OK != event_result){	}
 
 	ADC_init();
 
@@ -387,8 +404,13 @@ void uut_task()
 	   _task_block();
 	}
 
+	//send massage on reset:
+	sprintf(buffer, "MCU_started\n");
+	printf("%s",buffer);
+
 	while (1)
 	{
+
 		//wait for uart string massage:
 		status = wait_for_uart_massage_uut(&command ,&size);
 
