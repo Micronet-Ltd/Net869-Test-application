@@ -81,7 +81,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 	memset(buffer,0x0,sizeof(buffer));
 
 	uint32_t adc_value = 0; //adc
-
+	uint32_t i;
 	uint8_t read_data =  0; //acc
 	uint8_t write_data[2] = {0}; //acc
 	i2c_device_t acc_device = {.address = UUT_ACC_DEVICE_ADDRESS,    .baudRate_kbps = UUT_I2C_BAUD_RATE}; //acc
@@ -98,8 +98,11 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		//send tester side acknowledge:
 
 		memcpy(buffer, uart_ack_command_list.uart.string, uart_ack_command_list.uart.size);
-
 		printf("%s",buffer);
+
+		 _time_delay(1000);            // context switch
+		for(i=0;i<10000;)
+		{i++;}
 		break;
 
 	case J1708_UUT_COMMAND:
@@ -111,6 +114,10 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		//send ack:
 		sprintf(buffer, "j1708_ack\n");
 		printf("%s",buffer);
+
+		 _time_delay(1000);            // context switch
+		for(i=0;i<10000;)
+		{i++;}
 
 		uint8_t* j1708_data;
 		TIME_STRUCT time;
@@ -367,8 +374,8 @@ bool wait_for_uart_massage_uut(UART_COMMAND_NUMBER_T* command , uint32_t* size)
 	while(1)
 	{
 		//wait till get massage from scan task:
-		_event_wait_all(uut_scan_event_h, 2, 0);
-		_event_clear(uut_scan_event_h, 2);
+		_event_wait_all(uut_scan_event_h, 0x20, 0);
+		_event_clear(uut_scan_event_h, 0x20);
 
 		strcpy(command_uart,wait_for_recieve_massage());
 		//check if there is valid massage:

@@ -30,9 +30,9 @@ typedef enum {
 	MENU_CANBUS2		 ,
 	MAX_AUTO_TEST	 	 ,  //put all auto tests above, put all manual tests below:
 	MENU_WIGGLE  		 ,
-	RELEASE_COMMAND		 ,
 	MENU_COMMAND         ,
 	MENU_EXIT			 ,
+	MENU_TEST            ,
 	NO_COMMAND			 ,
 	MAX_COMMAND			 ,
 } COMMAND_NUMBER_T;
@@ -116,7 +116,6 @@ UART_TESTER_ACK_COMMAND_LIST_T uart_tester_ack_command_list =
 //usb menu commands:
 typedef struct
 {
-	CDC_COMMAND_T test;
 	CDC_COMMAND_T menu;
 	CDC_COMMAND_T menu_exit;
 	CDC_COMMAND_T menu_uart;
@@ -126,6 +125,7 @@ typedef struct
 	CDC_COMMAND_T menu_canbus2;
 	CDC_COMMAND_T menu_wiggle;
 	CDC_COMMAND_T menu_acc;
+	CDC_COMMAND_T menu_test;
 
 
 
@@ -134,11 +134,6 @@ typedef struct
 //usb menu commands:
 COMMAND_LIST_T command_list =
 {
-		{
-				"test",
-				4,
-				RELEASE_COMMAND
-		},
 		{
 				"menu",
 				4,
@@ -183,6 +178,11 @@ COMMAND_LIST_T command_list =
 				"7",
 				1,
 				MENU_ACC
+		},
+		{
+				"test_",
+				5,
+				MENU_TEST
 		}
 };
 
@@ -197,13 +197,7 @@ typedef struct
 	bool uut_abort;
 } TESTER_PARAMETER_LIST_T;
 
-TESTER_PARAMETER_LIST_T tester_parameters =
-{
-		FALSE,
-		FALSE,
-		FALSE,
-		FALSE
-};
+
 
 
 void tester_parser(COMMAND_NUMBER_T command);

@@ -360,8 +360,8 @@ void scan_task()
 		else
 		{
 		//note there is buffer from scan:
-		_event_set(uut_scan_event_h, 2);
-		_event_set(tester_scan_event_h, 2);
+		_event_set(uut_scan_event_h, 0x20);
+		_event_set(tester_scan_event_h, 0x40);
 
 		}
 	}
