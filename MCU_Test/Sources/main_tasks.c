@@ -22,6 +22,7 @@
 void MQX_I2C0_IRQHandler (void);
 void MQX_PORTA_IRQHandler(void);
 void MQX_PORTC_IRQHandler(void);
+uint8_t* wait_for_recieve_massage();
 
 #define	MAIN_TASK_SLEEP_PERIOD	10			// 10 mSec sleep
 #define TIME_ONE_SECOND_PERIOD	((int) (1000 / MAIN_TASK_SLEEP_PERIOD))
@@ -350,12 +351,12 @@ void scan_task()
 	{
 		scanf(" %s", &scan_string);
 
-		if(!strcmp(scan_string,"MCU_started\n"))
+		if(!strcmp((char*)scan_string,"MCU_started\n"))
 		{
 
 			memset(scan_string,0x0,sizeof(scan_string));
-			sprintf(scan_string, "Reset Button pressed\r\n");
-			cdc_write((uint8_t*)scan_string, strlen(scan_string));
+			sprintf((char*)scan_string, "Reset Button pressed\r\n");
+			cdc_write((uint8_t*)scan_string, strlen((char*)scan_string));
 		}
 		else
 		{

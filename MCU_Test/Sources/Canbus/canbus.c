@@ -24,7 +24,7 @@
 #include "fsl_flexcan_driver.h"
 #include "board.h"
 #include "fsl_debug_console.h"
-
+#include "canbus.h"
 /*****************************************************************************
  * Constant and Macro's - None
  *****************************************************************************/
@@ -118,7 +118,7 @@ flexcan_time_segment_t bitRateTable75Mhz[] = {
 uint32_t send_data(uint8_t* data, uint32_t size, uint32_t canInstance)
 {
     //uint8_t data[8];
-    uint32_t result, i;
+    uint32_t result;
     flexcan_data_info_t txInfo;
 
     /*Standard ID*/
@@ -225,7 +225,7 @@ void canbus_init(
 	{
 		numErrors++;
 		//PRINTF("\r\nFLEXCAN initilization. result: 0x%lx", result);
-		exit;
+		return;
 	}
 
 	if (FLEXCAN_HAL_GetClock((g_flexcanBase[instance])))
@@ -293,10 +293,6 @@ void canbus_init(
 //return 0 pass/1 fail
 bool canbus_recive(flexcan_msgbuff_t* rxMb,uint32_t* size, uint32_t timeout)
 {
-	uint32_t result;
-	uint32_t i;
-	//flexcan_msgbuff_t rxMb;
-	uint8_t f;
 	// Config receive mailbox
 	receive_mb_config();
 

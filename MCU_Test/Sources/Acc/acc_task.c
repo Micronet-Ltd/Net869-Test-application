@@ -92,15 +92,6 @@ void AccIntEnable()
 
 void Acc_task (uint32_t initial_data)
 {
-	TIME_STRUCT time;
-	//APPLICATION_MESSAGE_T *msg;
-
-	APPLICATION_MESSAGE_T test_acc_msg;
-	const _queue_id acc_qid        = _msgq_open ((_queue_number)ACC_QUEUE, 0);
-	//const _queue_id power_mgmt_qid  = _msgq_open ((_queue_number)POWER_MGM_QUEUE, 0);
-	
-	//uint8_t acc_good_count = 0;
-	//uint32_t acc_bad_count = 0;
 
 	/* */
 	_mqx_uint event_result;
@@ -146,8 +137,6 @@ void Acc_task (uint32_t initial_data)
 	//acc_msg = &test_acc_msg;
 	while (1)
 	{
-		APPLICATION_MESSAGE_T *acc_msg;
-		_mqx_uint err_task;
 
 		/*
 		 * Ruslan Add test procedure

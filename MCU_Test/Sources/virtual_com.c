@@ -831,7 +831,7 @@ int cdc_read(uint8_t *buf)
 	}
 }
 
-int cdc_write(uint8_t *buf, uint32_t size)
+void cdc_write(uint8_t *buf, uint32_t size)
 {
     uint8_t error;
     //while(1)

@@ -80,7 +80,7 @@ extern void TestApp_Init(void);
 //extern void Virtual_Com_App(void);
 extern void Task_Start(void *arg);
 int cdc_read(uint8_t *buf);
-int cdc_write(uint8_t *buf, uint32_t size);
+void cdc_write(uint8_t *buf, uint32_t size);
 
 void cdc_init();
 

@@ -59,6 +59,8 @@ uint8_t card_id[20] = {0};
 
 void* tester_scan_event_h;
 extern _pool_id   g_out_message_pool;
+extern void set_queue_target(APPLICATION_QUEUE_T queue_target);
+extern uint8_t* wait_for_recieve_massage();
 
 
 
@@ -287,7 +289,7 @@ bool wait_for_uart_massage_tester(UART_ACK_COMMAND_NUMBER_T* command )
 {
 	*command = NO_ACK_COMMAND;
 	bool command_found = false;
-	_mqx_uint timeout;
+
 	memset(buffer_scan,0x0,sizeof(buffer_scan));
 	//scanf(" %s", &buffer_scan);
 	if (MQX_OK !=  _event_wait_all(tester_scan_event_h, 0x40, 5000))
@@ -295,7 +297,7 @@ bool wait_for_uart_massage_tester(UART_ACK_COMMAND_NUMBER_T* command )
 		return 1;
 	}
 	_event_clear(tester_scan_event_h, 0x40);
-	strcpy(buffer_scan,wait_for_recieve_massage());
+	strcpy((char*)buffer_scan,(char*)wait_for_recieve_massage());
 
 
 	//check if there is valid massage:
@@ -312,13 +314,10 @@ bool wait_for_uart_massage_tester(UART_ACK_COMMAND_NUMBER_T* command )
 
 void tester_parser(COMMAND_NUMBER_T command)
 {
-	uint32_t i;
 
 	 _time_delay(10);            // context switch
-		char cdc_buffer[30] = {0};
-		uint32_t test_status = 0;
-
-		UART_ACK_COMMAND_NUMBER_T uart_command = NO_ACK_COMMAND;
+	char cdc_buffer[30] = {0};
+	uint32_t test_status = 0;
 	memset(buffer_print,0x0,sizeof(buffer_print));
 
 	switch (command)
@@ -352,8 +351,8 @@ void tester_parser(COMMAND_NUMBER_T command)
 
 		//print card id
 		memset(buffer_print,0x0,sizeof(buffer_print));
-		sprintf(buffer_print, "id:%s\n", card_id);
-		cdc_write((uint8_t*)buffer_print, strlen(buffer_print));
+		sprintf((char*)buffer_print, "id:%s\n", card_id);
+		cdc_write((uint8_t*)buffer_print, strlen((char*)buffer_print));
 		uint32_t can_status = 0;
 		test_status += test_uart();
 		test_status += test_j1708();
@@ -396,19 +395,19 @@ void tester_parser(COMMAND_NUMBER_T command)
 		if(test_status)
 		{
 			memset(buffer_print,0x0,sizeof(buffer_print));
-			sprintf(buffer_print, "full test fail, %d tests fail\r\n", test_status);
-			cdc_write((uint8_t*)buffer_print, strlen(buffer_print));
+			sprintf((char*)buffer_print, "full test fail, %d tests fail\r\n", test_status);
+			cdc_write((uint8_t*)buffer_print, strlen((char*)buffer_print));
 		}
 		else
 		{
 			memset(buffer_print,0x0,sizeof(buffer_print));
-			sprintf(buffer_print, "full test pass\r\n");
-			cdc_write((uint8_t*)buffer_print, strlen(buffer_print));
+			sprintf((char*)buffer_print, "full test pass\r\n");
+			cdc_write((uint8_t*)buffer_print, strlen((char*)buffer_print));
 		}
 		//print end test:
 		memset(buffer_print,0x0,sizeof(buffer_print));
-		sprintf(buffer_print, "end_test\r\n");
-		cdc_write((uint8_t*)buffer_print, strlen(buffer_print));
+		sprintf((char*)buffer_print, "end_test\r\n");
+		cdc_write((uint8_t*)buffer_print, strlen((char*)buffer_print));
 
 		break;
 
@@ -472,36 +471,32 @@ uint32_t test_wiggle()
 	bool uart_status = 0;
 	UART_ACK_COMMAND_NUMBER_T uart_command = NO_ACK_COMMAND;
 
-	if(FALSE == tester_parameters.tester_busy)
+	//send canbus:
+	sprintf((char*)buffer_print, "wiggle\n",7);
+	printf("%s",buffer_print);
+
+	//wait for ack:
+	uart_status = wait_for_uart_massage_tester(&uart_command);
+	if(uart_status == 1)
 	{
-		//send canbus:
-		sprintf(buffer_print, "wiggle\n",7);
-		printf("%s",buffer_print);
+		return 1; //timeout
+	}
 
-		//wait for ack:
-		uart_status = wait_for_uart_massage_tester(&uart_command);
-		if(uart_status == 1)
-		{
-			return 1; //timeout
-		}
+	//get ack:
+	if(uart_command == WIGGLE_ACK_COMMAND)
+	{
 
-		//get ack:
-		if(uart_command == WIGGLE_ACK_COMMAND)
-		{
-
-			memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-			sprintf(cdc_buffer, "wiggle	pass\r\n");
-			cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
-			return 0;
-		}
-		else
-		{
-			memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-			sprintf(cdc_buffer, "wiggle	fail\r\n");
-			cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
-			return 1;
-		}
-
+		memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+		sprintf(cdc_buffer, "wiggle	pass\r\n");
+		cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+		return 0;
+	}
+	else
+	{
+		memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+		sprintf(cdc_buffer, "wiggle	fail\r\n");
+		cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+		return 1;
 	}
 }
 
@@ -511,49 +506,8 @@ uint32_t test_acc()
 	bool uart_status = 0;
 	UART_ACK_COMMAND_NUMBER_T uart_command = NO_ACK_COMMAND;
 
-	if(FALSE == tester_parameters.tester_busy)
-		{
-			//send canbus:
-			sprintf(buffer_print, "acc\n",4);
-			printf("%s",buffer_print);
-
-			//wait for ack:
-			uart_status = wait_for_uart_massage_tester(&uart_command);
-			if(uart_status == 1)
-			{
-				return 1; //timeout
-			}
-
-			//get ack:
-			if(uart_command == ACC_ACK_COMMAND)
-			{
-
-				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-				sprintf(cdc_buffer, "ACC	pass\r\n");
-				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
-				return 0;
-			}
-			else
-			{
-				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-				sprintf(cdc_buffer, "ACC	fail\r\n");
-				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
-				return 1;
-			}
-
-		}
-}
-
-uint32_t test_a2d()
-{
-	char cdc_buffer[30] = {0};
-	bool uart_status = 0;
-	UART_ACK_COMMAND_NUMBER_T uart_command = NO_ACK_COMMAND;
-
-	if(FALSE == tester_parameters.tester_busy)
-	{
 		//send canbus:
-		sprintf(buffer_print, "a2d\n",4);
+		sprintf((char*)buffer_print, "acc\n",4);
 		printf("%s",buffer_print);
 
 		//wait for ack:
@@ -564,22 +518,58 @@ uint32_t test_a2d()
 		}
 
 		//get ack:
-		if(uart_command == A2D_ACK_COMMAND)
+		if(uart_command == ACC_ACK_COMMAND)
 		{
 
 			memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-			sprintf(cdc_buffer, "A2D	pass\r\n");
+			sprintf(cdc_buffer, "ACC	pass\r\n");
 			cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
 			return 0;
 		}
 		else
 		{
 			memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-			sprintf(cdc_buffer, "A2D	fail\r\n");
+			sprintf(cdc_buffer, "ACC	fail\r\n");
 			cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
 			return 1;
 		}
+
+}
+
+uint32_t test_a2d()
+{
+	char cdc_buffer[30] = {0};
+	bool uart_status = 0;
+	UART_ACK_COMMAND_NUMBER_T uart_command = NO_ACK_COMMAND;
+
+	//send canbus:
+	sprintf((char*)buffer_print, "a2d\n",4);
+	printf("%s",buffer_print);
+
+	//wait for ack:
+	uart_status = wait_for_uart_massage_tester(&uart_command);
+	if(uart_status == 1)
+	{
+		return 1; //timeout
 	}
+
+	//get ack:
+	if(uart_command == A2D_ACK_COMMAND)
+	{
+
+		memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+		sprintf(cdc_buffer, "A2D	pass\r\n");
+		cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+		return 0;
+	}
+	else
+	{
+		memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+		sprintf(cdc_buffer, "A2D	fail\r\n");
+		cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+		return 1;
+	}
+
 }
 
 uint32_t test_uart()
@@ -588,36 +578,33 @@ uint32_t test_uart()
 	bool uart_status = 0;
 	UART_ACK_COMMAND_NUMBER_T uart_command = NO_ACK_COMMAND;
 
-	if(FALSE == tester_parameters.tester_busy)
+	//send uart:
+	sprintf((char*)buffer_print, "uart\n",5);
+	printf("%s",buffer_print);
+
+	 _time_delay(10);            // context switch
+	uart_status = wait_for_uart_massage_tester(&uart_command);
+	if(uart_status == 1)
 	{
-		//send uart:
-		sprintf(buffer_print, "uart\n",5);
-		printf("%s",buffer_print);
+		return 1; //timeout
+	}
 
-		 _time_delay(10);            // context switch
-		uart_status = wait_for_uart_massage_tester(&uart_command);
-		if(uart_status == 1)
-		{
-			return 1; //timeout
-		}
+	//print pass is uart ack ok:
+	if(uart_command == UART_ACK_COMMAND)
+	{
+		memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+		sprintf(cdc_buffer, "Uart	pass\r\n");
+		cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+		return 0;
 
-		//print pass is uart ack ok:
-		if(uart_command == UART_ACK_COMMAND)
-		{
-			memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-			sprintf(cdc_buffer, "Uart	pass\r\n");
-			cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
-			return 0;
+	}
+	else
+	{
+		memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+		sprintf(cdc_buffer, "Uart	fail\r\n");
+		cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+		return 1;
 
-		}
-		else
-		{
-			memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-			sprintf(cdc_buffer, "Uart	fail\r\n");
-			cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
-			return 1;
-
-		}
 	}
 }
 
@@ -627,204 +614,105 @@ uint32_t test_j1708()
 	bool uart_status = 0;
 	UART_ACK_COMMAND_NUMBER_T uart_command = NO_ACK_COMMAND;
 
-	if(FALSE == tester_parameters.tester_busy)
+
+	//send j1708:
+	sprintf((char*)buffer_print, "j1708\n",6);
+	printf("%s",buffer_print);
+
+	//wait for ack:
+	uart_status = wait_for_uart_massage_tester(&uart_command);
+	if(uart_status == 1)
 	{
-		//send j1708:
-		sprintf(buffer_print, "j1708\n",6);
-		printf("%s",buffer_print);
+		return 1; //timeout
+	}
 
-		//wait for ack:
-		uart_status = wait_for_uart_massage_tester(&uart_command);
-		if(uart_status == 1)
+	//get ack:
+	if(uart_command == J1708_ACK_COMMAND)
+	{
+		//send j1708 massage:
+		TIME_STRUCT time;
+		set_queue_target(TESTER_QUEUE);
+		uint8_t string_j1708[] = "j1708";
+		uint8_t string_j1708_back[] = "8071j";
+		_time_get(&time);
+		if ((tester_msg_ptr = (APPLICATION_MESSAGE_PTR_T) _msg_alloc (g_out_message_pool)) == NULL)
 		{
-			return 1; //timeout
+			_mqx_exit(0);
 		}
+		//memcpy(tester_msg_ptr->.data, string_j1708, sizeof(string_j1708));
+		sprintf((char*)tester_msg_ptr->data, (char*)string_j1708, strlen((char*)string_j1708));
+		tester_msg_ptr->timestamp = time;
+		tester_msg_ptr->header.SOURCE_QID = tester_qid;
+		tester_msg_ptr->header.TARGET_QID = _msgq_get_id(0, J1708_TX_QUEUE);
+		tester_msg_ptr->header.SIZE = sizeof (MESSAGE_HEADER_STRUCT) + strlen((char *)tester_msg_ptr->data) + 1 ;
 
-		//get ack:
-		if(uart_command == J1708_ACK_COMMAND)
+		_msgq_send(tester_msg_ptr);
+
+		//wait for j1708 massage:
+		uut_msg_recieve_ptr = _msgq_receive(tester_qid, 6000);
+		if (uut_msg_recieve_ptr != NULL)
 		{
-			//send j1708 massage:
-			TIME_STRUCT time;
-			set_queue_target(TESTER_QUEUE);
-			uint8_t string_j1708[] = "j1708";
-			uint8_t string_j1708_back[] = "8071j";
-			_time_get(&time);
-			if ((tester_msg_ptr = (APPLICATION_MESSAGE_PTR_T) _msg_alloc (g_out_message_pool)) == NULL)
+			//check getting : "8071j"
+			//search for command:
+			if(!strcmp((char*)uut_msg_recieve_ptr->data, (char*)string_j1708_back))
 			{
-				_mqx_exit(0);
-			}
-			//memcpy(tester_msg_ptr->.data, string_j1708, sizeof(string_j1708));
-			sprintf(tester_msg_ptr->data, string_j1708, strlen(string_j1708));
-			tester_msg_ptr->timestamp = time;
-			tester_msg_ptr->header.SOURCE_QID = tester_qid;
-			tester_msg_ptr->header.TARGET_QID = _msgq_get_id(0, J1708_TX_QUEUE);
-			tester_msg_ptr->header.SIZE = sizeof (MESSAGE_HEADER_STRUCT) + strlen((char *)tester_msg_ptr->data) + 1 ;
-
-			_msgq_send(tester_msg_ptr);
-
-
-			uint8_t* j1708_data;
-			bool timeout = false;
-
-			//wait for j1708 massage:
-			uut_msg_recieve_ptr = _msgq_receive(tester_qid, 6000);
-			if (uut_msg_recieve_ptr != NULL)
-			{
-				//check getting : "8071j"
-				//search for command:
-				if(!strcmp(uut_msg_recieve_ptr->data, string_j1708_back))
-				{
-					memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-					sprintf(cdc_buffer, "J1708	pass\r\n");
-					cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
-					_msg_free(uut_msg_recieve_ptr);
-					return 0;
-				}
-
-			_msg_free(uut_msg_recieve_ptr);
+				memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+				sprintf(cdc_buffer, "J1708	pass\r\n");
+				cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+				_msg_free(uut_msg_recieve_ptr);
+				return 0;
 			}
 
-			memset(cdc_buffer,0x0,sizeof(cdc_buffer));
-			sprintf(cdc_buffer, "J1708	fail\r\n");
-			cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
-
-			return 1;
-
+		_msg_free(uut_msg_recieve_ptr);
 		}
 
 		memset(cdc_buffer,0x0,sizeof(cdc_buffer));
 		sprintf(cdc_buffer, "J1708	fail\r\n");
 		cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+
 		return 1;
+
 	}
+
+	memset(cdc_buffer,0x0,sizeof(cdc_buffer));
+	sprintf(cdc_buffer, "J1708	fail\r\n");
+	cdc_write((uint8_t*)cdc_buffer, strlen(cdc_buffer));
+	return 1;
+
 }
 
 uint32_t test_canbus(COMMAND_NUMBER_T command)
 {
 	char cdc_buffer[30] = {0};
 	uint32_t can_result;
-
 	UART_ACK_COMMAND_NUMBER_T uart_command = NO_ACK_COMMAND;
 
-	if(FALSE == tester_parameters.tester_busy)
+	if(MENU_CANBUS1 == command)
 	{
+		canbus_init(9, 8,  0x123,0x456 , 0);
+	}
+	else
+	{
+		canbus_init(9, 8,  0x123,0x456 , 1);
+	}
 
-		if(MENU_CANBUS1 == command)
-		{
-			canbus_init(9, 8,  0x123,0x456 , 0);
-		}
-		else
-		{
-			canbus_init(9, 8,  0x123,0x456 , 1);
-		}
+	//send canbus:
+	if(MENU_CANBUS1 == command)
+	{
+		sprintf((char*)buffer_print, "canbus1\n",7);
+	}
+	else
+	{
+		sprintf((char*)buffer_print, "canbus2\n",7);
+	}
 
-		//send canbus:
-		if(MENU_CANBUS1 == command)
-		{
-			sprintf(buffer_print, "canbus1\n",7);
-		}
-		else
-		{
-			sprintf(buffer_print, "canbus2\n",7);
-		}
+	printf("%s",buffer_print);
+	uint32_t cansize = 0;
 
-		printf("%s",buffer_print);
-		uint32_t cansize = 0;
-		uint8_t candata[64]= {0};
-		uint8_t* candata_rec;
-
-		//wait for ack:
-		can_result = wait_for_uart_massage_tester(&uart_command);
-		if(can_result == 1)
-		{
-			if(MENU_CANBUS1 == command)
-			{
-				canbus_deinit(0);
-			}
-			else
-			{
-				canbus_deinit(1);
-			}
-
-			return 1; //timeout
-		}
-
-		//get ack:
-		if(uart_command == CANBUS1_ACK_COMMAND)
-		{
-
-			uint8_t canData[8] = {0};
-			sprintf(canData, "canbus1");
-
-			//delay to uut to be ready to recieve:
-
-
-			can_result = canbus_transmit(canData,7);
-
-			if(can_result)
-			{
-				canbus_deinit(0);
-				return 1;
-			}
-
-			sprintf(cdc_buffer, "1subnac");
-
-			flexcan_msgbuff_t can_buff;
-
-
-			can_result = canbus_recive(&can_buff, &cansize, 6000);
-			if(can_result)
-			{
-				canbus_deinit(0);
-				return 1;
-			}
-
-			if(!strcmp(can_buff.data,cdc_buffer))
-			{
-				canbus_deinit(0);
-				return 0 ;
-			}
-		}
-
-
-		if(uart_command == CANBUS2_ACK_COMMAND)
-		{
-
-			bool can_status = 0;
-			uint32_t i;
-			uint8_t canData[8] = {0};
-			sprintf(canData, "canbus2");
-
-			//delay to uut to be ready to recieve:
-
-
-			can_result = canbus_transmit(canData,7);
-			if(can_status)
-			{
-				canbus_deinit(1);
-				return 1;
-			}
-
-			sprintf(cdc_buffer, "2subnac");
-
-			flexcan_msgbuff_t can_buff;
-
-
-			can_result = canbus_recive(&can_buff, &cansize, 6000);
-			if(can_status)
-			{
-				canbus_deinit(1);
-				return 1;
-			}
-
-			if(!strcmp(can_buff.data,cdc_buffer))
-			{
-				canbus_deinit(1);
-				return 0;
-			}
-		}
-
-
+	//wait for ack:
+	can_result = wait_for_uart_massage_tester(&uart_command);
+	if(can_result == 1)
+	{
 		if(MENU_CANBUS1 == command)
 		{
 			canbus_deinit(0);
@@ -834,9 +722,95 @@ uint32_t test_canbus(COMMAND_NUMBER_T command)
 			canbus_deinit(1);
 		}
 
-		return 1;
-
+		return 1; //timeout
 	}
+
+	//get ack:
+	if(uart_command == CANBUS1_ACK_COMMAND)
+	{
+
+		uint8_t canData[8] = {0};
+		sprintf((char*)canData, "canbus1");
+
+		//delay to uut to be ready to recieve:
+
+
+		can_result = canbus_transmit(canData,7);
+
+		if(can_result)
+		{
+			canbus_deinit(0);
+			return 1;
+		}
+
+		sprintf(cdc_buffer, "1subnac");
+
+		flexcan_msgbuff_t can_buff;
+
+
+		can_result = canbus_recive(&can_buff, &cansize, 6000);
+		if(can_result)
+		{
+			canbus_deinit(0);
+			return 1;
+		}
+
+		if(!strcmp((char*)can_buff.data,cdc_buffer))
+		{
+			canbus_deinit(0);
+			return 0 ;
+		}
+	}
+
+
+	if(uart_command == CANBUS2_ACK_COMMAND)
+	{
+
+		bool can_status = 0;
+		uint8_t canData[8] = {0};
+		sprintf((char*)canData, "canbus2");
+
+		//delay to uut to be ready to recieve:
+
+
+		can_result = canbus_transmit(canData,7);
+		if(can_status)
+		{
+			canbus_deinit(1);
+			return 1;
+		}
+
+		sprintf(cdc_buffer, "2subnac");
+
+		flexcan_msgbuff_t can_buff;
+
+
+		can_result = canbus_recive(&can_buff, &cansize, 6000);
+		if(can_status)
+		{
+			canbus_deinit(1);
+			return 1;
+		}
+
+		if(!strcmp((char*)can_buff.data,cdc_buffer))
+		{
+			canbus_deinit(1);
+			return 0;
+		}
+	}
+
+
+	if(MENU_CANBUS1 == command)
+	{
+		canbus_deinit(0);
+	}
+	else
+	{
+		canbus_deinit(1);
+	}
+
+	return 1;
+
 }
 /******************************************************************************
  *
@@ -967,8 +941,8 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, uint8_t* buffer, uint32_t* bu
 					*command = command_type;
 					//found command
 					memset(buffer_print,0x0,sizeof(buffer_print));
-					sprintf(buffer_print, "\n");
-					cdc_write((uint8_t*)buffer_print, strlen(buffer_print));
+					sprintf((char*)buffer_print, "\n");
+					cdc_write((uint8_t*)buffer_print, strlen((char*)buffer_print));
 					return 1; //command found
 				}
 

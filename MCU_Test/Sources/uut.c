@@ -48,7 +48,10 @@
  * Global Variables
  ****************************************************************************/
 extern _pool_id   g_out_message_pool;
-extern wiggle_sensor_cnt;
+extern uint32_t wiggle_sensor_cnt;
+extern uint8_t* wait_for_recieve_massage();
+
+void set_queue_target(APPLICATION_QUEUE_T queue_target);
 
 
 _queue_id   uut_qid;
@@ -86,8 +89,6 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 	uint8_t write_data[2] = {0}; //acc
 	i2c_device_t acc_device = {.address = UUT_ACC_DEVICE_ADDRESS,    .baudRate_kbps = UUT_I2C_BAUD_RATE}; //acc
 	uint32_t cansize;
-	uint8_t candata[64]= {0};
-	uint8_t* can_data_recieve;
 	uint8_t candata_compare[8]= {0};
 
 	switch (command_type)
@@ -112,16 +113,14 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 
 
 		//send ack:
-		sprintf(buffer, "j1708_ack\n");
+		sprintf((char*)buffer, "j1708_ack\n");
 		printf("%s",buffer);
 
 		 _time_delay(1000);            // context switch
 		for(i=0;i<10000;)
 		{i++;}
 
-		uint8_t* j1708_data;
 		TIME_STRUCT time;
-		bool timeout = false;
 		uint8_t string_j1708[] = "j1708";
 		uint8_t string_j1708_back[] = "8071j";
 		//wait for j1708 massage:
@@ -133,7 +132,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 
 		//check getting : "8071j"
 		//search for command:
-		if(!strcmp(uut_msg_recieve_ptr->data, string_j1708))
+		if(!strcmp((char*)uut_msg_recieve_ptr->data, (char*)string_j1708))
 		{
 			//send back data in reverse:
 			_time_get(&time);
@@ -142,7 +141,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 				break;
 			}
 			//memcpy(uut_msg_ptr->.data, string_j1708, sizeof(string_j1708));
-			sprintf(uut_msg_ptr->data, string_j1708_back, strlen(string_j1708_back));
+			sprintf((char*)uut_msg_ptr->data, (char*)string_j1708_back, strlen((char*)string_j1708_back));
 			uut_msg_ptr->timestamp = time;
 			uut_msg_ptr->header.SOURCE_QID = uut_qid;
 			uut_msg_ptr->header.TARGET_QID = _msgq_get_id(0, J1708_TX_QUEUE);
@@ -163,13 +162,13 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		if((adc_value > MIN_A2D_VALUE) && (adc_value < MAX_A2D_VALUE))
 		{
 			//send ack:
-			sprintf(buffer, "a2d_ack\n");
+			sprintf((char*)buffer, "a2d_ack\n");
 			printf("%s",buffer);
 		}
 		else
 		{
 			//send error ack:
-			sprintf(buffer, "error_ack\n");
+			sprintf((char*)buffer, "error_ack\n");
 			printf("%s",buffer);
 		}
 
@@ -186,14 +185,14 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		if(CANBUS1_UUT_COMMAND == command_type)
 		{
 			canbus_init(8, 9,  0x456,0x123 , 0);
-			sprintf(candata_compare, "canbus1");
-			sprintf(buffer, "canbus1_ack\n");
+			sprintf((char*)candata_compare, "canbus1");
+			sprintf((char*)buffer, "canbus1_ack\n");
 		}
 		else
 		{
 			canbus_init(8, 9,  0x456,0x123 , 1);
-			sprintf(candata_compare, "canbus2");
-			sprintf(buffer, "canbus2_ack\n");
+			sprintf((char*)candata_compare, "canbus2");
+			sprintf((char*)buffer, "canbus2_ack\n");
 		}
 
 
@@ -212,15 +211,15 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		}
 		//delay for tester to be ready to recieve canbus:
 
-		if(!strcmp(can_buff.data,candata_compare))
+		if(!strcmp((char*)can_buff.data,(char*)candata_compare))
 		{
 			if(CANBUS1_UUT_COMMAND == command_type)
 			{
-				sprintf(candata_compare, "1subnac");
+				sprintf((char*)candata_compare, "1subnac");
 			}
 			else
 			{
-				sprintf(candata_compare, "2subnac");
+				sprintf((char*)candata_compare, "2subnac");
 			}
 			for(i=0;i<1000000;)
 					{
@@ -253,13 +252,13 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		if( wiggle_sensor_cnt > 0) //
 		{
 			//send ack:
-			sprintf(buffer, "wiggle_ack\n");
+			sprintf((char*)buffer, "wiggle_ack\n");
 			printf("%s",buffer);
 		}
 		else
 		{
 			//send error ack:
-			sprintf(buffer, "error_ack\n");
+			sprintf((char*)buffer, "error_ack\n");
 			printf("%s",buffer);
 		}
 		break;
@@ -274,13 +273,13 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		if(read_data == ACC_ID_VALUE) //acc id value is 0x4A
 		{
 			//send ack:
-			sprintf(buffer, "acc_ack\n");
+			sprintf((char*)buffer, "acc_ack\n");
 			printf("%s",buffer);
 		}
 		else
 		{
 			//send error ack:
-			sprintf(buffer, "error_ack\n");
+			sprintf((char*)buffer, "error_ack\n");
 			printf("%s",buffer);
 		}
 		break;
@@ -377,7 +376,7 @@ bool wait_for_uart_massage_uut(UART_COMMAND_NUMBER_T* command , uint32_t* size)
 		_event_wait_all(uut_scan_event_h, 0x20, 0);
 		_event_clear(uut_scan_event_h, 0x20);
 
-		strcpy(command_uart,wait_for_recieve_massage());
+		strcpy((char*)command_uart,(char*)wait_for_recieve_massage());
 		//check if there is valid massage:
 		command_found = search_command_uut(command, command_uart);
 		if(command_found)
@@ -412,7 +411,7 @@ void uut_task()
 	}
 
 	//send massage on reset:
-	sprintf(buffer, "MCU_started\n");
+	sprintf((char*)buffer, "MCU_started\n");
 	printf("%s",buffer);
 
 	while (1)

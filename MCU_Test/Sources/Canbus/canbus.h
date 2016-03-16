@@ -20,6 +20,7 @@
 #ifndef _CANBUS_H
 #define _CANBUS_H
 
+#include "fsl_flexcan_hal.h"
 
 void canbus_init(
 				uint32_t rxMailbxNum,
@@ -34,5 +35,8 @@ void canbus_init(
 			);
 
 void canbus_deinit(uint32_t canInstance);
+uint32_t canbus_transmit(uint8_t* data, uint32_t size);
+bool canbus_recive(flexcan_msgbuff_t* rxMb,uint32_t* size, uint32_t timeout);
+
 
 #endif //_CANBUS_H
