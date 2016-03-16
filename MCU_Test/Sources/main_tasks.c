@@ -342,14 +342,14 @@ void MQX_PORTC_IRQHandler(void)
 	}
 }
 
-uint8_t scan_string[20];
+uint8_t scan_string[50];
 
 void scan_task()
 {
 
 	while(1)
 	{
-		scanf(" %s", &scan_string);
+		scanf("%s", &scan_string);
 
 		if(!strcmp((char*)scan_string,"MCU_started\n"))
 		{

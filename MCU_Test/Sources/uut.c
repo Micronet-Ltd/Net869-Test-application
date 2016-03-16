@@ -77,7 +77,7 @@ char* strnstr(const char *s, const char *find, size_t slen);
 
 
 
-uint8_t buffer[20] = {0};
+uint8_t buffer[50] = {0};
 
 void execute_command(UART_COMMAND_NUMBER_T command_type)
 {
@@ -97,8 +97,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 	case UART_UUT_COMMAND:
 
 		//send tester side acknowledge:
-
-		memcpy(buffer, uart_ack_command_list.uart.string, uart_ack_command_list.uart.size);
+		sprintf((char*)buffer, "ack:uart test pass\n");
 		printf("%s",buffer);
 		break;
 
@@ -109,7 +108,8 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 
 
 		//send ack:
-		sprintf((char*)buffer, "j1708_ack\n");
+		//sprintf((char*)buffer, "j1708_ack\n");
+		sprintf((char*)buffer, "ack:j1708\n");
 		printf("%s",buffer);
 
 		// _time_delay(1000);            // context switch
@@ -158,13 +158,21 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		if((adc_value > MIN_A2D_VALUE) && (adc_value < MAX_A2D_VALUE))
 		{
 			//send ack:
-			sprintf((char*)buffer, "a2d_ack_%d\n",adc_value);
+			//sprintf((char*)buffer, "a2d_ack_%d\n",adc_value);
+			sprintf((char*)buffer, "ack:a2d test pass\n");
+			printf("%s",buffer);
+			_time_delay(100);
+			sprintf((char*)buffer, "ack:voltage =%d\n",adc_value);
 			printf("%s",buffer);
 		}
 		else
 		{
 			//send error ack:
-			sprintf((char*)buffer, "error_ack\n");
+			//sprintf((char*)buffer, "error_ack\n");
+			sprintf((char*)buffer, "nack:a2d test failed\n");
+			printf("%s",buffer);
+			_time_delay(100);
+			sprintf((char*)buffer, "ack:voltage =%d\n",adc_value);
 			printf("%s",buffer);
 		}
 
@@ -181,17 +189,13 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		if(CANBUS1_UUT_COMMAND == command_type)
 		{
 			canbus_init(8, 9,  0x456,0x123 , 0);
-			sprintf((char*)candata_compare, "canbus1");
-			sprintf((char*)buffer, "canbus1_ack\n");
 		}
 		else
 		{
 			canbus_init(8, 9,  0x456,0x123 , 1);
-			sprintf((char*)candata_compare, "canbus2");
-			sprintf((char*)buffer, "canbus2_ack\n");
 		}
 
-
+		sprintf((char*)buffer, "ack:can\n");
 		printf("%s",buffer);
 		uint32_t i;
 		for(i=0;i<10000;i++)
@@ -205,8 +209,17 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		{
 			i=i;
 		}
-		//delay for tester to be ready to recieve canbus:
 
+		if(CANBUS1_UUT_COMMAND == command_type)
+		{
+			sprintf((char*)candata_compare, "canbus1");
+		}
+		else
+		{
+			sprintf((char*)candata_compare, "canbus2");
+		}
+
+		//delay for tester to be ready to recieve canbus:
 		if(!strcmp((char*)can_buff.data,(char*)candata_compare))
 		{
 			if(CANBUS1_UUT_COMMAND == command_type)
@@ -223,6 +236,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 					}
 			canbus_transmit(candata_compare,7);
 		}
+
 		for(i=0;i<10000;)
 		{
 			i++;
@@ -248,13 +262,13 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		if( wiggle_sensor_cnt > 0) //
 		{
 			//send ack:
-			sprintf((char*)buffer, "wiggle_ack\n");
+			sprintf((char*)buffer, "ack:wiggle pass\n");
 			printf("%s",buffer);
 		}
 		else
 		{
 			//send error ack:
-			sprintf((char*)buffer, "error_ack\n");
+			sprintf((char*)buffer, "nack:wiggle fail\n");
 			printf("%s",buffer);
 		}
 		break;
@@ -269,13 +283,19 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		if(read_data == ACC_ID_VALUE) //acc id value is 0x4A
 		{
 			//send ack:
-			sprintf((char*)buffer, "acc_ack\n");
+			sprintf((char*)buffer, "ack:acc test pass\n");
+			printf("%s",buffer);
+			_time_delay(100);
+			sprintf((char*)buffer, "ack:id=%d\n",read_data);
 			printf("%s",buffer);
 		}
 		else
 		{
 			//send error ack:
-			sprintf((char*)buffer, "error_ack\n");
+			sprintf((char*)buffer, "nack:acc test fail\n");
+			printf("%s",buffer);
+			_time_delay(100);
+			sprintf((char*)buffer, "nack:id=%d\n",read_data);
 			printf("%s",buffer);
 		}
 		break;

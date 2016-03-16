@@ -39,81 +39,13 @@ typedef enum {
 	MAX_COMMAND			 ,
 } COMMAND_NUMBER_T;
 
-
-//command acknowledge from uut side:
-typedef enum {
-	NO_ACK_COMMAND		=	0,
-	UART_ACK_COMMAND		 ,
-	J1708_ACK_COMMAND        ,
-	CANBUS1_ACK_COMMAND		 ,
-	CANBUS2_ACK_COMMAND      ,
-	WIGGLE_ACK_COMMAND		 ,
-	A2D_ACK_COMMAND		 	 ,
-	ACC_ACK_COMMAND		 	 ,
-	MAX_UART_ACK_COMMAND     ,
-} UART_ACK_COMMAND_NUMBER_T;
-
-
 typedef struct
 {
 	char* string;
 	uint32_t size;
-	UART_ACK_COMMAND_NUMBER_T type;
+	COMMAND_NUMBER_T type;
 } CDC_COMMAND_T;
 
-
-typedef struct
-{
-	CDC_COMMAND_T uart;
-	CDC_COMMAND_T j1708;
-	CDC_COMMAND_T a2d;
-	CDC_COMMAND_T canbus1;
-	CDC_COMMAND_T canbus2;
-	CDC_COMMAND_T wiggle;
-	CDC_COMMAND_T acc;
-
-
-
-} UART_TESTER_ACK_COMMAND_LIST_T;
-
-UART_TESTER_ACK_COMMAND_LIST_T uart_tester_ack_command_list =
-{
-		{
-				"uart_ack\n",
-				9,
-				UART_ACK_COMMAND
-		},
-		{
-				"j1708_ack",
-				5,
-				J1708_ACK_COMMAND
-		},
-		{
-				"a2d_ack",
-				7,
-				A2D_ACK_COMMAND
-		},
-		{
-				"canbus1_ack",
-				10,
-				CANBUS1_ACK_COMMAND
-		},
-		{
-				"canbus2_ack",
-				10,
-				CANBUS2_ACK_COMMAND
-		},
-		{
-				"wiggle_ack",
-				10,
-				WIGGLE_ACK_COMMAND
-		},
-		{
-				"acc_ack",
-				7,
-				ACC_ACK_COMMAND
-		}
-};
 
 //usb menu commands:
 typedef struct
