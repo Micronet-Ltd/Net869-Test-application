@@ -100,10 +100,6 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 
 		memcpy(buffer, uart_ack_command_list.uart.string, uart_ack_command_list.uart.size);
 		printf("%s",buffer);
-
-		 _time_delay(1000);            // context switch
-		for(i=0;i<10000;)
-		{i++;}
 		break;
 
 	case J1708_UUT_COMMAND:
@@ -116,9 +112,9 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		sprintf((char*)buffer, "j1708_ack\n");
 		printf("%s",buffer);
 
-		 _time_delay(1000);            // context switch
-		for(i=0;i<10000;)
-		{i++;}
+		// _time_delay(1000);            // context switch
+		//for(i=0;i<10000;)
+		//{i++;}
 
 		TIME_STRUCT time;
 		uint8_t string_j1708[] = "j1708";

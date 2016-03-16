@@ -353,8 +353,11 @@ void tester_parser(COMMAND_NUMBER_T command)
 		memset(buffer_print,0x0,sizeof(buffer_print));
 		sprintf((char*)buffer_print, "id:%s\n", card_id);
 		cdc_write((uint8_t*)buffer_print, strlen((char*)buffer_print));
+
 		uint32_t can_status = 0;
+
 		test_status += test_uart();
+
 		test_status += test_j1708();
 
 		can_status = test_canbus(MENU_CANBUS1);
@@ -582,7 +585,6 @@ uint32_t test_uart()
 	sprintf((char*)buffer_print, "uart\n",5);
 	printf("%s",buffer_print);
 
-	 _time_delay(10);            // context switch
 	uart_status = wait_for_uart_massage_tester(&uart_command);
 	if(uart_status == 1)
 	{
