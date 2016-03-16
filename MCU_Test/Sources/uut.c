@@ -125,7 +125,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		uint8_t string_j1708[] = "j1708";
 		uint8_t string_j1708_back[] = "8071j";
 		//wait for j1708 massage:
-		uut_msg_recieve_ptr = _msgq_receive(uut_qid, 10000);
+		uut_msg_recieve_ptr = _msgq_receive(uut_qid, 4000);
 		if (uut_msg_recieve_ptr == NULL)
 		{
 			break;
@@ -205,7 +205,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		}
 		flexcan_msgbuff_t can_buff;
 
-		canbus_recive(&can_buff, &cansize,  OSA_WAIT_FOREVER);
+		canbus_recive(&can_buff, &cansize,  4000);
 		for(i=0;i<10000;i++)
 		{
 			i=i;

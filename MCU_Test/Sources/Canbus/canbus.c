@@ -115,7 +115,7 @@ flexcan_time_segment_t bitRateTable75Mhz[] = {
     { 6, 3, 3,  4, 3},  /* 1   MHz */
 };
 
-void send_data(uint8_t* data, uint32_t size, uint32_t canInstance)
+uint32_t send_data(uint8_t* data, uint32_t size, uint32_t canInstance)
 {
     //uint8_t data[8];
     uint32_t result, i;
@@ -131,24 +131,19 @@ void send_data(uint8_t* data, uint32_t size, uint32_t canInstance)
     result = FLEXCAN_DRV_ConfigTxMb(canInstance, txMailboxNum, &txInfo, txIdentifier);
     if (result)
     {
-        //PRINTF("\r\nTransmit MB config error. Error Code: 0x%lx", result);
+        return 1;
     }
     else
     {
         result = FLEXCAN_DRV_SendBlocking(instance, txMailboxNum, &txInfo, txIdentifier,
-                                  data, OSA_WAIT_FOREVER);
+                                  data, 6000);
         if (result)
         {
-            numErrors++;
-            //PRINTF("\r\nTransmit send configuration failed. result: 0x%lx", result);
+           return 1;
         }
         else
         {
-            //PRINTF("\r\nData transmit: ");
-            //for (i = 0; i < txInfo.data_length; i++ )
-            //{
-            //    //PRINTF("%02x ", data[i]);
-            //}
+           return 0;
         }
     }
 }
@@ -295,7 +290,7 @@ void canbus_init(
 	}
 }
 
-//return 1 pass/0 fail
+//return 0 pass/1 fail
 bool canbus_recive(flexcan_msgbuff_t* rxMb,uint32_t* size, uint32_t timeout)
 {
 	uint32_t result;
@@ -305,7 +300,13 @@ bool canbus_recive(flexcan_msgbuff_t* rxMb,uint32_t* size, uint32_t timeout)
 	// Config receive mailbox
 	receive_mb_config();
 
-	FLEXCAN_DRV_RxMessageBufferBlocking(instance,rxMailboxNum, rxMb,0xFFFFFF);
+	flexcan_status_t error_canbus;
+	error_canbus = FLEXCAN_DRV_RxMessageBufferBlocking(instance,rxMailboxNum, rxMb,timeout);
+
+	if(error_canbus)
+	{
+		return TRUE;
+	}
 	//result = FLEXCAN_DRV_RxMessageBuffer(canInstance, rxMailboxNum,&rxMb);
 
 	*size = ((rxMb->cs) >> 16) & 0xF;
@@ -316,12 +317,12 @@ bool canbus_recive(flexcan_msgbuff_t* rxMb,uint32_t* size, uint32_t timeout)
 //		 data[i]  = rxMb.data[result];
 //	 }
 
-	return TRUE;
+	return FALSE;
 }
 
-canbus_transmit(uint8_t* data, uint32_t size)
+uint32_t canbus_transmit(uint8_t* data, uint32_t size)
 {
     // Config receive mailbox
     //receive_mb_config();
-	send_data(data,size, instance );
+	return send_data(data,size, instance );
 }
