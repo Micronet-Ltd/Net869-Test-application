@@ -84,7 +84,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 	memset(buffer,0x0,sizeof(buffer));
 
 	uint32_t adc_value = 0; //adc
-	uint32_t i;
+	//uint32_t i;
 	uint8_t read_data =  0; //acc
 	uint8_t write_data[2] = {0}; //acc
 	i2c_device_t acc_device = {.address = UUT_ACC_DEVICE_ADDRESS,    .baudRate_kbps = UUT_I2C_BAUD_RATE}; //acc
@@ -158,7 +158,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		if((adc_value > MIN_A2D_VALUE) && (adc_value < MAX_A2D_VALUE))
 		{
 			//send ack:
-			sprintf((char*)buffer, "a2d_ack\n");
+			sprintf((char*)buffer, "a2d_ack_%d\n",adc_value);
 			printf("%s",buffer);
 		}
 		else

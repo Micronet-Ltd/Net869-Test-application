@@ -20,8 +20,12 @@
 #ifndef _TESTER_H
 #define _TESTER_H
 
+#define TIME_OUT 1
+#define ACK_FAIL 2
+
 //command getting from cdc uart:
 typedef enum {
+	MENU_TEST            , // !! must be first so when changing from menu to test all it recognize string "test_"
 	MENU_UART			 ,
 	MENU_J1708			 ,
 	MENU_A2D			 ,
@@ -31,8 +35,6 @@ typedef enum {
 	MAX_AUTO_TEST	 	 ,  //put all auto tests above, put all manual tests below:
 	MENU_WIGGLE  		 ,
 	MENU_COMMAND         ,
-	MENU_EXIT			 ,
-	MENU_TEST            ,
 	NO_COMMAND			 ,
 	MAX_COMMAND			 ,
 } COMMAND_NUMBER_T;
@@ -117,7 +119,6 @@ UART_TESTER_ACK_COMMAND_LIST_T uart_tester_ack_command_list =
 typedef struct
 {
 	CDC_COMMAND_T menu;
-	CDC_COMMAND_T menu_exit;
 	CDC_COMMAND_T menu_uart;
 	CDC_COMMAND_T menu_j1708;
 	CDC_COMMAND_T menu_a2d;
@@ -138,11 +139,6 @@ COMMAND_LIST_T command_list =
 				"menu",
 				4,
 				MENU_COMMAND
-		},
-		{
-				"0",
-				1,
-				MENU_EXIT
 		},
 		{
 				"1",
