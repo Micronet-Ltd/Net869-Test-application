@@ -17,12 +17,12 @@
 #include "virtual_com.h"
 #include "canbus.h"
 //#define printf
-
+// EREZ: remove "yuval" from code
 
 void MQX_I2C0_IRQHandler (void);
 void MQX_PORTA_IRQHandler(void);
 void MQX_PORTC_IRQHandler(void);
-uint8_t* wait_for_recieve_massage();
+char* wait_for_recieve_massage();
 
 #define	MAIN_TASK_SLEEP_PERIOD	10			// 10 mSec sleep
 #define TIME_ONE_SECOND_PERIOD	((int) (1000 / MAIN_TASK_SLEEP_PERIOD))
@@ -49,7 +49,7 @@ void Main_task( uint32_t initial_data ) {
 	OSA_Start();
 #else //usb test
 
-    _queue_id  main_qid;    //, usb_qid, can1_qid, can2_qid, j1708_qid, acc_qid, reg_qid;
+    //_queue_id  main_qid;    //, usb_qid, can1_qid, can2_qid, j1708_qid, acc_qid, reg_qid;
 	//unused yuval _queue_id  j1708_rx_qid;
 	//APPLICATION_MESSAGE_T *msg;
 
@@ -144,7 +144,7 @@ void Main_task( uint32_t initial_data ) {
 		_task_block();
 	}
 
-	main_qid = _msgq_open(MAIN_QUEUE, 0);
+	//main_qid = _msgq_open(MAIN_QUEUE, 0);
 
 	_time_delay (1000);
 
@@ -342,7 +342,7 @@ void MQX_PORTC_IRQHandler(void)
 	}
 }
 
-uint8_t scan_string[50];
+char scan_string[50];
 
 void scan_task()
 {
@@ -351,12 +351,12 @@ void scan_task()
 	{
 		scanf("%s", &scan_string);
 
-		if(!strcmp((char*)scan_string,"MCU_started\n"))
+		if(!strcmp(scan_string,"MCU_started\n"))
 		{
 
 			memset(scan_string,0x0,sizeof(scan_string));
-			sprintf((char*)scan_string, "Reset Button pressed\r\n");
-			cdc_write((uint8_t*)scan_string, strlen((char*)scan_string));
+			sprintf(scan_string, "Reset Button pressed\r\n");
+			cdc_write((uint8_t *)scan_string, strlen((char*)scan_string));
 		}
 		else
 		{
@@ -368,7 +368,7 @@ void scan_task()
 	}
 }
 
-uint8_t* wait_for_recieve_massage()
+char* wait_for_recieve_massage()
 {
 	return scan_string;
 }
