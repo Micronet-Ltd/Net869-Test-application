@@ -90,7 +90,7 @@ bool cdc_search_command(COMMAND_NUMBER_T* command, char* buffer, uint32_t* buffe
 char buffer_print[20] = {0};
 char buffer_scan[50] = {0};
 uint8_t card_id[20] = {0};
-char *command_list[MAX_COMMAND];
+char command_list[MAX_COMMAND][MAX_COMMAND_LENGTH];
 
 void* tester_scan_event_h;
 extern _task_id   g_TASK_ids[NUM_TASKS];
