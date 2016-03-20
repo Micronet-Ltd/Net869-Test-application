@@ -868,6 +868,8 @@ void tester_task()
 			//get id:
 			memcpy(card_id, buf + 5, sizeof(card_id));
 			}
+
+			memset(buf,0x0,sizeof(buf));
 			//else
 			//{
 				tester_parser(command);
