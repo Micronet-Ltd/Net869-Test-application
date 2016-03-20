@@ -364,7 +364,7 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 
 
 		//search for command:
-		if(( strnstr((char*)command_buffer, (char*)command_string, 20) != NULL) && (command_size != 0x0))
+		if(( strstr((char*)command_buffer, (char*)command_string) != NULL) && (command_size != 0x0))
 		{
 			*command = command_type;
 			//found command
