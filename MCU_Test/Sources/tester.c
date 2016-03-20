@@ -54,7 +54,6 @@ typedef enum {
 	MENU_ACC  		     ,
 	MENU_CANBUS1		 ,
 	MENU_CANBUS2		 ,
-	MAX_AUTO_TEST	 	 ,  //put all auto tests above, put all manual tests below:
 	MENU_WIGGLE  		 ,
 	MENU_COMMAND         ,
 	MAX_COMMAND			 ,
@@ -139,6 +138,7 @@ void command_list_init()
 	strcpy(command_list[MENU_COMMAND],"menu");
 	strcpy(command_list[MENU_UART],"1");
 	strcpy(command_list[MENU_J1708],"2");
+	strcpy(command_list[MENU_A2D],"3");
 	strcpy(command_list[MENU_CANBUS1],"4");
 	strcpy(command_list[MENU_CANBUS2],"5");
 	strcpy(command_list[MENU_WIGGLE],"6");
