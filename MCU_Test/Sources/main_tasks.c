@@ -79,9 +79,11 @@ void Main_task( uint32_t initial_data ) {
 	OSA_InstallIntHandler(PORTC_IRQn, MQX_PORTC_IRQHandler);
 
     // I2C0 Initialization
-    NVIC_SetPriority(I2C0_IRQn, 6U);
-    OSA_InstallIntHandler(I2C0_IRQn, MQX_I2C0_IRQHandler);
-    I2C_DRV_MasterInit(I2C0_IDX, &i2c_master);
+	I2C_Enable (0);
+	I2C_Enable (1);
+//    NVIC_SetPriority(I2C0_IRQn, 6U);
+//    OSA_InstallIntHandler(I2C0_IRQn, MQX_I2C0_IRQHandler);
+//    I2C_DRV_MasterInit(I2C0_IDX, &i2c_master);
 
 
     // turn on device
@@ -109,6 +111,7 @@ void Main_task( uint32_t initial_data ) {
     GPIO_DRV_ClearPinOutput(USB_OTG_SEL);    // Connect D1 <-> D MCU or HUB
     //GPIO_DRV_SetPinOutput(USB_OTG_SEL);    // Connect D2 <-> D A8 OTG
     GPIO_DRV_ClearPinOutput(USB_OTG_OE); //Enable OTG/MCU switch
+    GPIO_DRV_ClearPinOutput(CPU_OTG_ID);
 
     _time_delay(10);
     GPIO_DRV_SetPinOutput(USB_HUB_RSTN);
@@ -221,7 +224,8 @@ void Main_task( uint32_t initial_data ) {
 
 
 	//Enable CAN
-	GPIO_DRV_SetPinOutput(CAN_ENABLE);
+	GPIO_DRV_SetPinOutput(CAN1_ENABLE);
+	GPIO_DRV_SetPinOutput(CAN2_ENABLE);
 
     //Disable CAN termination
     GPIO_DRV_ClearPinOutput(CAN1_TERM_ENABLE);
