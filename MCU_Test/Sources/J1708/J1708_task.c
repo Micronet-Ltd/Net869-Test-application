@@ -37,32 +37,45 @@ extern "C"
 {
 #endif
 
+void debug_read_j1708_status (void);
+
 static uint8_t J1708_state    = J1708_DISABLED;
 static uint8_t J1708_priority = 7;			// lowest priority by default
 
 void * g_J1708_event_h;
 
+APPLICATION_QUEUE_T g_queue_target;
+
+APPLICATION_MESSAGE_T *validation_j1708_msg;
+bool massage_ready = FALSE;
+
 void J1708_reset   (void);
+
+
 
 void J1708_Tx_task (uint32_t initial_data)
 {
+	static _queue_id   J1708_tx_qid;
+
 	APPLICATION_MESSAGE_T *msg;
-	const _queue_id     J1708_tx_qid = _msgq_open (J1708_TX_QUEUE, 0);
-	
+	J1708_tx_qid = _msgq_open (J1708_TX_QUEUE, 0);
+
 	uint8_t       cnt;
 	bool          J1708TxFull   ;
 	uint8_t       uart_tx_length;
 	
-	printf ("\nJ1708_Tx Task: Start \n");
+	//print yuvalf ("\nJ1708_Tx Task: Start \n");
 
 	while (1) {
 		while (J1708_state == J1708_DISABLED)
 			_time_delay (10000);
 
+		debug_read_j1708_status ();
+
 		// wait 10 second for interrupt message
 		msg = _msgq_receive(J1708_tx_qid, 10000);
 		if (msg == NULL) {
-			printf ("\nJ1708_Tx: WARNING: Message not received in last 10 Seconds \n");
+			//printf ("\nJ1708_Tx: WARNING: Message not received in last 10 Seconds \n");
 			continue;
 		}
 
@@ -74,7 +87,7 @@ void J1708_Tx_task (uint32_t initial_data)
 		}
 
 		if (cnt >= 10) {
-			printf ("\nJ1708_Tx: ERROR: Previous transfer not completed !!!\n");
+			//printf ("\nJ1708_Tx: ERROR: Previous transfer not completed !!!\n");
 			J1708_reset ();
 			_msg_free   (msg);
 			continue;
@@ -95,10 +108,12 @@ void J1708_Tx_task (uint32_t initial_data)
 			J1708_reset ();
 			continue;
 		}
+
+		debug_read_j1708_status ();
 	}
 
 	// should never get here
-	printf ("\nJ1708_Tx Task: End \n");
+	//print yuvalf ("\nJ1708_Tx Task: End \n");
 	_task_block();
 }
 
@@ -118,7 +133,7 @@ void J1708_Rx_task (uint32_t initial_data)
 
 	_event_create ("event.J1708_RX");
 	_event_open   ("event.J1708_RX", &g_J1708_event_h);
-	printf ("\nJ1708_Rx Task: Start \n");
+	//print yuvalf ("\nJ1708_Rx Task: Start \n");
 
 	while (1) {
 		while (J1708_state == J1708_DISABLED)
@@ -131,7 +146,7 @@ void J1708_Rx_task (uint32_t initial_data)
 		if (J1708_rx_event_bit == EVENT_J1708_RX)
 			_event_clear    (g_J1708_event_h, EVENT_J1708_RX);
 		else {
-			printf ("\nJ1708_Rx: WARNING: No interrupt in last 10 Seconds \n");
+			////print yuvalf ("\nJ1708_Rx: WARNING: No interrupt in last 10 Seconds \n");
 			continue;
 		}
 		
@@ -143,7 +158,7 @@ void J1708_Rx_task (uint32_t initial_data)
 
 		// check if this is a real new message
 		if (J1708_rx_status == false) {
-			printf ("\nJ1708_Rx: ERROR: Received interrupt without register bit indication\n");
+			////print yuvalf ("\nJ1708_Rx: ERROR: Received interrupt without register bit indication\n");
 			continue;
 		}
 
@@ -151,37 +166,42 @@ void J1708_Rx_task (uint32_t initial_data)
 		/*
 		 * Ruslan Add message pool for test
 		 */
-		/*
+
 		if ((msg = _msg_alloc(g_out_message_pool)) != NULL) {
 			msg->header.SOURCE_QID = J1708_rx_qid;
-			msg->header.TARGET_QID = _msgq_get_id(0, USB_QUEUE);;
+			msg->header.TARGET_QID = _msgq_get_id(0, get_queue_target());
 			msg->header.SIZE       = J1708_rx_len;
-			 
-			_msgq_send (msg);
-			if (MQX_OK != (err_task = _task_get_error()))
-			{
-				printf("J1708_Rx_task Task: ERROR: message send failed %x\n", err_task);
-				_task_set_error(MQX_OK);
-			}
 		}
 		else {
 			if (MQX_OK != (err_task = _task_get_error()))
 			{
 				_task_set_error(MQX_OK);
 			}
-			printf("J1708_Rx_task Task: ERROR: message allocation failed %x\n", err_task);
+			//print yuvalf("J1708_Rx_task Task: ERROR: message allocation failed %x\n", err_task);
 			continue;
 		}
-		*/
+
 
 		// calculate actual buffer size
 		if (!FPGA_read_J1708_packet (msg->data, msg->header.SIZE)) {
-			printf ("\nJ1708_Rx: ERROR: Could not read UART message buffer\n");
+			//print yuvalf ("\nJ1708_Rx: ERROR: Could not read UART message buffer\n");
 			J1708_reset ();
 		}
 
 		// add header size to message length
 		msg->header.SIZE  += sizeof (MESSAGE_HEADER_STRUCT);
+
+		_msgq_send (msg);
+		if (MQX_OK != (err_task = _task_get_error()))
+		{
+			//print yuvalf("J1708_Rx_task Task: ERROR: message send failed %x\n", err_task);
+			_task_set_error(MQX_OK);
+		}
+
+		//move massage to global pointer for hw validation:
+		massage_ready = TRUE;
+		validation_j1708_msg = msg;
+
 #ifdef MIC_LED_TEST
 		GPIO_DRV_SetPinOutput(LED_BLUE);
 #endif
@@ -189,9 +209,10 @@ void J1708_Rx_task (uint32_t initial_data)
 	}
 	
 	// should never get here
-	printf ("\nJ1708_Rx Task: End \n");
+	//print yuvalf ("\nJ1708_Rx Task: End \n");
 	_task_block();
 }
+
 
 
 void J1708_reset (void)
@@ -204,19 +225,19 @@ void J1708_enable (uint8_t priority)
 {
 	uint8_t prio = priority;
 
-	if (FPGA_set_irq (FPGA_REG_J1708_RX_IRQ_BIT))
-		printf ("\nJ1708: Set FPGA J1708 Rx IRQ\n");
-	else
-		printf ("\nJ1708: ERROR: FPGA J1708 Rx IRQ NOT Set !!!\n");
+	if (FPGA_set_irq (FPGA_REG_J1708_RX_IRQ_BIT)) {}
+		//print yuvalf ("\nJ1708: Set FPGA J1708 Rx IRQ\n");
+//	else
+		//print yuvalf ("\nJ1708: ERROR: FPGA J1708 Rx IRQ NOT Set !!!\n");
 
 	// set enable bit
-	if (!FPGA_write_J1708_priority (&prio))
-		printf ("J1708: ERROR: J1708 Priority NOT SET\n");
+	if (!FPGA_write_J1708_priority (&prio)) {}
+		//print yuvalf ("J1708: ERROR: J1708 Priority NOT SET\n");
 
-	if (FPGA_J1708_enable ())
-		printf ("\nJ1708: J1708 Enabled\n");
-	else
-		printf ("\nJ1708: ERROR: J1708 NOT Enabled !!!\n");
+	if (FPGA_J1708_enable ()) {}
+		//print yuvalf ("\nJ1708: J1708 Enabled\n");
+	//else
+		//print yuvalf ("\nJ1708: ERROR: J1708 NOT Enabled !!!\n");
 
 	GPIO_DRV_ClearPinOutput (J1708_ENABLE);
 
@@ -228,18 +249,47 @@ void J1708_disable (void)
 {
 	GPIO_DRV_SetPinOutput   (J1708_ENABLE);
 
-	if (FPGA_clear_irq (FPGA_REG_J1708_RX_IRQ_BIT))
-		printf ("\nJ1708: Clear FPGA J1708 Rx IRQ\n");
-	else
-		printf ("\nJ1708: ERROR: FPGA J1708 Rx IRQ NOT Cleared !!!\n");
+	if (FPGA_clear_irq (FPGA_REG_J1708_RX_IRQ_BIT)) {}
+		//print yuvalf ("\nJ1708: Clear FPGA J1708 Rx IRQ\n");
+//	else
+		//print yuvalf ("\nJ1708: ERROR: FPGA J1708 Rx IRQ NOT Cleared !!!\n");
 
-	if (FPGA_J1708_disable ())
-		printf ("\nJ1708: J1708 Disabled\n");
-	else
-		printf ("\nJ1708: ERROR: J1708 NOT Disabled !!!\n");
+	if (FPGA_J1708_disable ()) {}
+		//print yuvalf ("\nJ1708: J1708 Disabled\n");
+//	else
+		//print yuvalf ("\nJ1708: ERROR: J1708 NOT Disabled !!!\n");
 
 	J1708_state = J1708_DISABLED;
 }
+
+//0 massage is ready
+//1 timeout
+APPLICATION_QUEUE_T get_queue_target()
+{
+	return g_queue_target;
+}
+
+void set_queue_target(APPLICATION_QUEUE_T queue_target)
+{
+	g_queue_target = queue_target;
+}
+
+void debug_read_j1708_status (void)
+{
+	// for debug only
+	uint32_t debug_version = 0;
+	bool debug_status = 0;;					// enable \ disable
+	bool debug_tx_status = 0;;
+	uint8_t debug_tx_len = 0;;
+	uint8_t debug_prio = 0;;
+
+
+	FPGA_read_J1708_status (&debug_status);
+	FPGA_read_J1708_tx_register(&debug_tx_status, &debug_tx_len);
+	FPGA_read_J1708_priority(&debug_prio);
+	FPGA_read_version (&debug_version);
+}
+
 
 #ifdef __cplusplus
 }

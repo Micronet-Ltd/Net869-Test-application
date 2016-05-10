@@ -1,0 +1,21 @@
+# file types:
+*.o
+*.map
+*.obj
+*.mk
+*.pp
+*.exe
+*.xml
+
+# files to manage
+#*.c
+#*.h
+#*.cpp
+#*.hpp
+#*.a
+
+#folders exclude from projects
+
+#files exclude from projects
+
+#files exclude from projects

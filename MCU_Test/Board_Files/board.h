@@ -83,11 +83,11 @@
 #define BOARD_RTC_CLK_FREQUENCY     32768U;
 /* The UART to use for debug messages. */
 #ifndef BOARD_DEBUG_UART_INSTANCE
-    #define BOARD_DEBUG_UART_INSTANCE  4 
+    #define BOARD_DEBUG_UART_INSTANCE  4
     #define BOARD_DEBUG_UART_BASEADDR   UART4
 #endif
 #ifndef BOARD_DEBUG_UART_BAUD
-    #define BOARD_DEBUG_UART_BAUD       115200
+    #define BOARD_DEBUG_UART_BAUD       9600////600//115200//9600
 #endif
 
 /* This define to use for power manager demo */
@@ -137,7 +137,7 @@
 #define BOARD_DAC_DEMO_ADC_CHANNEL      10U
 
 /* The CAN instance used for board */
-#define BOARD_CAN_INSTANCE              2
+#define BOARD_CAN_INSTANCE              0// // should be 0 or 1
 #define BSP_CAN_DEVICE_0				0
 #define BSP_CAN_DEVICE_1				1
 

@@ -13,13 +13,16 @@
 
 typedef enum {
 	//Regular priority tasks
-	
+	TESTER_TASK_PRIORITY=15,
+	UUT_TASK_PRIORITY=16,
 	USB_TASK_PRIORITY = (START_APPLICATION_PRIORITY + 1),
+
 	POWER_MGM_TASK_PRIORITY,
 	CAN_TASK_RX_PRIORITY,
 	CAN_TASK_TX_PRIORITY,
 	J1708_TX_TASK_PRIORITY,
 	J1708_RX_TASK_PRIORITY,
+	SCAN_TASK_PRIORITY,
 	FPGA_UART_RX_TASK_PRIORITY,
 	ACC_TASK_PRIORITY,
 	VIB_SENSOR_TASK_PRIORITY  ,
@@ -40,6 +43,9 @@ typedef enum {
 	FPGA_UART_RX_TASK,
 	ACC_TASK         ,
 	REG_TASK		 ,
+	TESTER_TASK      ,
+	SCAN_TASK	     ,
+	UUT_TASK		 ,
 	NUM_TASKS		 ,
 } TASK_TEMPLATE_INDEX_T;
 
@@ -50,10 +56,12 @@ typedef enum {
 	CAN2_QUEUE       ,
 	J1708_TX_QUEUE   ,
 	J1708_RX_QUEUE   ,
+	TESTER_QUEUE     ,
 	FPGA_UART_RX_QUEUE,
 	ACC_QUEUE        ,
 	POWER_MGM_QUEUE  ,
 	REG_QUEUE   	 ,
+	UUT_QUEUE        ,
 	USB_TEST_QUEUE	,
 } APPLICATION_QUEUE_T;
 
@@ -63,15 +71,7 @@ typedef struct {
 	TIME_STRUCT					timestamp;
 } APPLICATION_MESSAGE_T, *APPLICATION_MESSAGE_PTR_T;
 
-extern void Main_task        (uint32_t);
-extern void Power_MGM_task   (uint32_t);
 
-extern void Acc_task         (uint32_t);
-
-
-extern void J1708_Tx_task     (uint32_t);
-extern void J1708_Rx_task     (uint32_t);
-extern void FPGA_UART_Rx_task (uint32_t );
 
 
 #endif /* __tasks_list_h_ */

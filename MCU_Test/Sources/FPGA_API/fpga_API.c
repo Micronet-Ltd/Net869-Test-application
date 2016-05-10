@@ -351,7 +351,7 @@ void FPGA_UART_Rx_task (uint32_t initial_data)
 	uart_status_t uart_rx_status;
 
 	fpga_uart_rx_buf_wr_idx = 0;
-	printf ("\nFPGA_UART_Rx Task: Start \n");
+	//yuval printf ("\nFPGA_UART_Rx Task: Start \n");
 
 	while (1) {
 		// get message via UART channel

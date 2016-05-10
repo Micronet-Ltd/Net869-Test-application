@@ -159,15 +159,15 @@ _WEAK_FUNCTION(void _bsp_nio_stdio_install(void))
     assert(NULL != res);
 
     close(0);
-    fd = open("tty:", NIO_TTY_FLAGS_EOL_RN | NIO_TTY_FLAGS_ECHO);  // 0 - stdin
+    fd = open("tty:", NIO_TTY_FLAGS_EOL_RN );//| NIO_TTY_FLAGS_ECHO);  // 0 - stdin
     assert(fd == 0);
 
     close(1);
-    fd = open("tty:", NIO_TTY_FLAGS_EOL_RN | NIO_TTY_FLAGS_ECHO);  // 1 - stdout
+    fd = open("tty:", NIO_TTY_FLAGS_EOL_RN );//| NIO_TTY_FLAGS_ECHO);  // 1 - stdout
     assert(fd == 1);
 
     close(2);
-    fd = open("tty:", NIO_TTY_FLAGS_EOL_RN | NIO_TTY_FLAGS_ECHO);  // 2 - stderr
+    fd = open("tty:", NIO_TTY_FLAGS_EOL_RN );//| NIO_TTY_FLAGS_ECHO);  // 2 - stderr
     assert(fd == 2);
 
     /* Dummy driver is not needed any more, therefore should be uninstalled */

@@ -22,7 +22,7 @@ void I2C_Enable  (uint8_t port)
 	}
 	
 	I2C_DRV_MasterInit (port,  &i2c_master[port]);
-	printf("\nI2C %d Enabled\n", port);
+	// yuval printf("\nI2C %d Enabled\n", port);
 }
 
 void I2C_Disable (uint8_t port) 

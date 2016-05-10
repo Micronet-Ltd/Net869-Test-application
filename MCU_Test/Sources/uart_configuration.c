@@ -22,12 +22,14 @@ void UART_Enable  (uint8_t port, const uart_user_config_t *uartConfig)
 						OSA_InstallIntHandler (UART1_RX_TX_IRQn, MQX_UART1_RX_TX_IRQHandler);
 						break;
 						
+
+
 		default:		printf("\nUART Enable - illeagal port\n");
 						return;
 	}
 	
 	UART_DRV_Init (port, &uartState[port], uartConfig);
-	printf("\nUART %d Enabled\n", port);
+	// yuval printf("\nUART %d Enabled\n", port);
 }
 
 void UART_Disable (uint8_t port) 
@@ -44,3 +46,5 @@ void UART_Reset  (uint8_t port, const uart_user_config_t *uartConfig)
 
 void MQX_UART0_RX_TX_IRQHandler (void)		{ UART_DRV_IRQHandler (0); }
 void MQX_UART1_RX_TX_IRQHandler (void)		{ UART_DRV_IRQHandler (1); }
+void MQX_UART4_RX_TX_IRQHandler (void)		{ UART_DRV_IRQHandler (4); }
+void MQX_UART5_RX_TX_IRQHandler (void)		{ UART_DRV_IRQHandler (5); }
