@@ -30,6 +30,31 @@ idnum= id.strip('0x')
 
 string_end_of_test = b'end_test\r\n'
 string_a = b'full test pass\r\n'
+manual_test = 1
+
+
+
+#start led test
+ser.write(('led_test_start\r\n').encode()) 
+
+#ask user if led are on or off
+user_input = input(' Are you see 3 LED light on?\n Press "Y" for Yes, "N" for No\r\n ')
+if((user_input == 'Y') or (user_input == 'y')):
+    f.write(('led test pass\r\n'))
+    manual_test = 1
+else:
+    f.write(('led test fail\r\n'))
+    manual_test = 0
+	
+ser.write(('led_test_start\r\n').encode()) 
+#reset test
+
+#ask user to press reset
+
+# send reset command for waiting to reset:
+# tester will send pass or fail.
+
+
 
 ser.write(('id:' + idnum + '\r\n').encode()) #"test_" will start auto test running
 end_of_test = True
@@ -47,7 +72,7 @@ while end_of_test:
         else:
             result = 0
             break
-if result == 1:
+if ((result == 1) and (manual_test == 1)):
     print('\n',idnum," ********** Test Pass **********\r")
 else:
     #print(i)

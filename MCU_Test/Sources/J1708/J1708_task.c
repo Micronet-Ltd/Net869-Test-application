@@ -203,7 +203,7 @@ void J1708_Rx_task (uint32_t initial_data)
 		validation_j1708_msg = msg;
 
 #ifdef MIC_LED_TEST
-		GPIO_DRV_SetPinOutput(LED_BLUE);
+		//GPIO_DRV_SetPinOutput(LED_BLUE);
 #endif
 
 	}

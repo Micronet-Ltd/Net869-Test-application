@@ -48,6 +48,7 @@
 //command getting from cdc uart:
 typedef enum {
 	FULL_TEST = 0        , // !! must be first so when changing from menu to test all it recognize string "test_"
+	LED_TEST			 ,
 	MENU_UART			 ,
 	MENU_J1708			 ,
 	MENU_A2D			 ,
@@ -80,6 +81,7 @@ uint32_t test_j1708();
 uint32_t test_wiggle();
 uint32_t test_a2d();
 uint32_t test_uart();
+uint32_t test_led();
 void tester_parser(COMMAND_NUMBER_T command);
 bool cdc_search_command(COMMAND_NUMBER_T* command, char* buffer, uint32_t* buffer_size);
 
@@ -143,6 +145,7 @@ void command_list_init()
 	strcpy(command_list[MENU_CANBUS2],"5");
 	strcpy(command_list[MENU_WIGGLE],"6");
 	strcpy(command_list[MENU_ACC],"7");
+	strcpy(command_list[LED_TEST],"led_test_start");
 	strcpy(command_list[FULL_TEST],"id:");
 }
 
@@ -295,6 +298,10 @@ void tester_parser(COMMAND_NUMBER_T command)
 		menu_display();
 
 		break;
+	case LED_TEST:
+		test_led();
+		break;
+
 	case FULL_TEST:
 
 		tester_parameters.menu_mode_on = FALSE;
@@ -501,6 +508,16 @@ uint32_t test_a2d()
 
 	return !ack;
 
+}
+
+
+uint32_t test_led()
+{
+	char uart_massage[50] = {0};
+
+	//send uut to turn led on turn leds on:
+	sprintf((char*)uart_massage, "led_start\n",4);
+	printf("%s",uart_massage);
 }
 
 uint32_t test_uart()

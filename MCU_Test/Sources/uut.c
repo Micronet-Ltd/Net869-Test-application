@@ -29,6 +29,7 @@
 #include "ADC.h"
 #include "fsl_i2c_master_driver.h"
 #include "fsl_flexcan_hal.h"
+#include "fpga_api.h"
 /*****************************************************************************
  * Constant and Macro's - None
  *****************************************************************************/
@@ -50,6 +51,7 @@
 extern _pool_id   g_out_message_pool;
 extern uint32_t wiggle_sensor_cnt;
 extern uint8_t* wait_for_recieve_massage();
+extern _task_id   g_TASK_ids[NUM_TASKS];
 
 void set_queue_target(APPLICATION_QUEUE_T queue_target);
 
@@ -59,6 +61,8 @@ APPLICATION_MESSAGE_PTR_T uut_msg_ptr;
 APPLICATION_MESSAGE_PTR_T uut_msg_recieve_ptr;
 bool uut_reset = TRUE; // uut out from reset with this default state
 void* uut_scan_event_h;
+bool start_led = false;
+
 /*****************************************************************************
  * Local Types - None
  *****************************************************************************/
@@ -99,6 +103,9 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		//send tester side acknowledge:
 		sprintf((char*)buffer, "ack:uart test pass\n");
 		printf("%s",buffer);
+		break;
+	case LED_UUT_START_COMMAND:
+		start_led = true;
 		break;
 
 	case J1708_UUT_COMMAND:
@@ -359,7 +366,11 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 								command_size = uart_command_list.acc.size;
 								command_type = uart_command_list.acc.type;
 							break;
-
+		case LED_UUT_START_COMMAND:
+								sprintf(command_string, uart_command_list.led.string, uart_command_list.led.size);
+								command_size = uart_command_list.led.size;
+								command_type = uart_command_list.led.type;
+							break;
 		}
 
 
@@ -402,6 +413,72 @@ bool wait_for_uart_massage_uut(UART_COMMAND_NUMBER_T* command , uint32_t* size)
 	}
 
 	return false;
+}
+
+void led_task()
+{
+	uint8_t Br, R,G,B;
+	Br = 10;
+
+
+	while(1)
+	{
+
+		if(start_led)
+		{
+
+			R = 255;
+			G = 0;
+			B = 0;
+
+			FPGA_write_led_status (LED_RIGHT , &Br, &R, &G, &B);
+			FPGA_write_led_status (LED_MIDDLE, &Br, &R, &G, &B);
+			GPIO_DRV_ClearPinOutput (LED_GREEN);
+			GPIO_DRV_ClearPinOutput (LED_BLUE);
+			GPIO_DRV_SetPinOutput   (LED_RED);
+			if(!start_led)
+			{
+				_task_block();
+			}
+			_time_delay(1000);
+
+			R = 0;
+			G = 255;
+			B = 0;
+
+			FPGA_write_led_status (LED_RIGHT , &Br, &R, &G, &B);
+			FPGA_write_led_status (LED_MIDDLE, &Br, &R, &G, &B);
+			GPIO_DRV_ClearPinOutput (LED_RED);
+			GPIO_DRV_SetPinOutput (LED_GREEN);
+			GPIO_DRV_ClearPinOutput (LED_BLUE);
+			if(!start_led)
+			{
+				_task_block();
+			}
+			_time_delay(1000);
+
+			R = 0;
+			G = 0;
+			B = 255;
+
+			FPGA_write_led_status (LED_RIGHT , &Br, &R, &G, &B);
+			FPGA_write_led_status (LED_MIDDLE, &Br, &R, &G, &B);
+			GPIO_DRV_ClearPinOutput (LED_RED);
+			GPIO_DRV_ClearPinOutput (LED_GREEN);
+			GPIO_DRV_SetPinOutput (LED_BLUE);
+			if(!start_led)
+			{
+				_task_block();
+			}
+
+
+
+		}
+
+		_time_delay(1000);
+	}
+
+	_task_block();
 }
 
 

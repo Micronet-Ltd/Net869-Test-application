@@ -206,6 +206,13 @@ void Main_task( uint32_t initial_data ) {
 		//print yuvalf("\nMain Could not create J1708_RX_TASK\n");
 	}
 
+	g_TASK_ids[LED_TASK] = _task_create(0, LED_TASK, 0 );
+	if (g_TASK_ids[LED_TASK] == MQX_NULL_TASK_ID)
+	{
+		//print yuvalf("\nMain Could not create J1708_RX_TASK\n");
+	}
+
+
 	g_TASK_ids[FPGA_UART_RX_TASK] = _task_create(0, FPGA_UART_RX_TASK, 0 );
 	if (g_TASK_ids[FPGA_UART_RX_TASK] == MQX_NULL_TASK_ID)
 	{
@@ -250,7 +257,7 @@ void Main_task( uint32_t initial_data ) {
 
     while ( 1 ) {
 
-//#if 0
+#if 0
 		GPIO_DRV_ClearPinOutput (LED_RED);
 		GPIO_DRV_ClearPinOutput (LED_GREEN);
 		GPIO_DRV_ClearPinOutput (LED_BLUE);
@@ -267,7 +274,7 @@ void Main_task( uint32_t initial_data ) {
 		GPIO_DRV_ClearPinOutput (LED_GREEN);
 		GPIO_DRV_SetPinOutput   (LED_BLUE);
 		_time_delay (1000);
-//#endif
+#endif
 
 
 		//add by ruslan:

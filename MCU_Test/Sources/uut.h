@@ -32,6 +32,7 @@ typedef enum {
 	CANBUS2_UUT_COMMAND      ,
 	WIGGLE_UUT_COMMAND		 ,
 	ACC_UUT_COMMAND			 ,
+	LED_UUT_START_COMMAND    ,
 	MAX_UUT_COMMAND          ,
 } UART_COMMAND_NUMBER_T;
 
@@ -54,6 +55,7 @@ typedef struct
 	UART_COMMAND_T canbus2;
 	UART_COMMAND_T wiggle;
 	UART_COMMAND_T acc;
+	UART_COMMAND_T led;
 
 
 } UART_COMMAND_LIST_T;
@@ -94,6 +96,11 @@ UART_COMMAND_LIST_T uart_command_list =
 				"acc",
 				3,
 				ACC_UUT_COMMAND
+		},
+		{
+				"led_start",
+				9,
+				LED_UUT_START_COMMAND
 		}
 };
 
