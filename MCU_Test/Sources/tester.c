@@ -143,7 +143,7 @@ void command_list_init()
 	strcpy(command_list[MENU_CANBUS2],"5");
 	strcpy(command_list[MENU_WIGGLE],"6");
 	strcpy(command_list[MENU_ACC],"7");
-	strcpy(command_list[FULL_TEST],"test_");
+	strcpy(command_list[FULL_TEST],"id:");
 }
 
 
@@ -307,9 +307,9 @@ void tester_parser(COMMAND_NUMBER_T command)
 		}
 
 		//print card id
-		memset(buffer_print,0x0,sizeof(buffer_print));
-		sprintf(buffer_print, "id:%s\n", card_id);
-		cdc_write((uint8_t *)buffer_print, strlen(buffer_print));
+		//memset(buffer_print,0x0,sizeof(buffer_print));
+		//sprintf(buffer_print, "id:%s\n", card_id);
+		//cdc_write((uint8_t *)buffer_print, strlen(buffer_print));
 
 		test_status = test_uart();
 
