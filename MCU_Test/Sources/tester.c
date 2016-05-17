@@ -49,6 +49,7 @@
 typedef enum {
 	FULL_TEST = 0        , // !! must be first so when changing from menu to test all it recognize string "test_"
 	LED_TEST			 ,
+	RESET_TEST           ,
 	MENU_UART			 ,
 	MENU_J1708			 ,
 	MENU_A2D			 ,
@@ -82,9 +83,10 @@ uint32_t test_wiggle();
 uint32_t test_a2d();
 uint32_t test_uart();
 uint32_t test_led();
+uint32_t test_reset();
 void tester_parser(COMMAND_NUMBER_T command);
 bool cdc_search_command(COMMAND_NUMBER_T* command, char* buffer, uint32_t* buffer_size);
-
+extern bool reset_flag;
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -146,6 +148,7 @@ void command_list_init()
 	strcpy(command_list[MENU_WIGGLE],"6");
 	strcpy(command_list[MENU_ACC],"7");
 	strcpy(command_list[LED_TEST],"led_test_start");
+	strcpy(command_list[RESET_TEST],"reset_test_start");
 	strcpy(command_list[FULL_TEST],"id:");
 }
 
@@ -300,6 +303,10 @@ void tester_parser(COMMAND_NUMBER_T command)
 		break;
 	case LED_TEST:
 		test_led();
+		reset_flag = false; //next test is reset so reset flag before  reset check
+		break;
+	case RESET_TEST:
+		test_reset();
 		break;
 
 	case FULL_TEST:
@@ -317,6 +324,13 @@ void tester_parser(COMMAND_NUMBER_T command)
 		//memset(buffer_print,0x0,sizeof(buffer_print));
 		//sprintf(buffer_print, "id:%s\n", card_id);
 		//cdc_write((uint8_t *)buffer_print, strlen(buffer_print));
+
+		test_status = test_reset();
+
+		if(test_status)
+		{
+			error_number++;
+		}
 
 		test_status = test_uart();
 
@@ -510,6 +524,27 @@ uint32_t test_a2d()
 
 }
 
+uint32_t test_reset()
+{
+	uint32_t error = 0;
+	char uart_massage[50] = {0};
+	memset(uart_massage,0x0,sizeof(uart_massage));
+
+	if(reset_flag)
+	{
+		sprintf(uart_massage, "reset test pass\r\n");
+	}
+	else
+	{
+		sprintf(uart_massage, "reset test fail\r\n");
+		error++;
+	}
+
+	cdc_write((uint8_t *)uart_massage, strlen(uart_massage));
+	reset_flag = false;
+
+	return error;
+}
 
 uint32_t test_led()
 {

@@ -105,7 +105,14 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		printf("%s",buffer);
 		break;
 	case LED_UUT_START_COMMAND:
-		start_led = true;
+		if(start_led)
+		{
+			start_led = false;
+		}
+		else
+		{
+			start_led = true;
+		}
 		break;
 
 	case J1708_UUT_COMMAND:
@@ -436,11 +443,10 @@ void led_task()
 			GPIO_DRV_ClearPinOutput (LED_GREEN);
 			GPIO_DRV_ClearPinOutput (LED_BLUE);
 			GPIO_DRV_SetPinOutput   (LED_RED);
-			if(!start_led)
+			if(start_led)
 			{
-				_task_block();
+				_time_delay(1000);
 			}
-			_time_delay(1000);
 
 			R = 0;
 			G = 255;
@@ -451,11 +457,10 @@ void led_task()
 			GPIO_DRV_ClearPinOutput (LED_RED);
 			GPIO_DRV_SetPinOutput (LED_GREEN);
 			GPIO_DRV_ClearPinOutput (LED_BLUE);
-			if(!start_led)
+			if(start_led)
 			{
-				_task_block();
+				_time_delay(1000);
 			}
-			_time_delay(1000);
 
 			R = 0;
 			G = 0;
@@ -466,10 +471,6 @@ void led_task()
 			GPIO_DRV_ClearPinOutput (LED_RED);
 			GPIO_DRV_ClearPinOutput (LED_GREEN);
 			GPIO_DRV_SetPinOutput (LED_BLUE);
-			if(!start_led)
-			{
-				_task_block();
-			}
 
 
 

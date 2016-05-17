@@ -46,23 +46,33 @@ else:
     f.write(('led test fail\r\n'))
     manual_test = 0
 	
+	
+time.sleep(1)
 ser.write(('led_test_start\r\n').encode()) 
+time.sleep(1)
+
+
 #reset test
 
 #ask user to press reset
-
-# send reset command for waiting to reset:
-# tester will send pass or fail.
+user_input = input(' Please press the Reset button on the UUT, \r\n press enter in the PC. after pressing the Reset button\r\n ')
 
 
-
+#read reset_done
+##if(s_reset_result == 'reset_pass'):
+##    f.write('reset test pass\r\n')
+##else:
+##    f.write('reset test fail\r\n')
+time.sleep(1)	
 ser.write(('id:' + idnum + '\r\n').encode()) #"test_" will start auto test running
+
 end_of_test = True
 
 while end_of_test:
     out = ser.readlines()
     for i in out:
-        f.write(i.decode())
+        if (i.decode() != 'led_test_start\r\n'):
+            f.write(i.decode())
         if (i == string_end_of_test):
             end_of_test = False
             #print(i)
