@@ -488,6 +488,8 @@ int debug_printf(const char  *fmt_s, ...)
    return result;
 }
 
+int printf_debug(const char  *fmt_s, ...){return 0;}
+
 static int debug_putc(int ch, void* stream)
 {
     const unsigned char c = (unsigned char) ch;

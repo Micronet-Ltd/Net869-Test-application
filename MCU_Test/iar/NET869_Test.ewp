@@ -77,7 +77,7 @@
         </option>
         <option>
           <name>OGLastSavedByProductVersion</name>
-          <state>7.50.2.10499</state>
+          <state>7.60.1.11206</state>
         </option>
         <option>
           <name>GeneralEnableMisra</name>
@@ -127,7 +127,7 @@
         </option>
         <option>
           <name>GBECoreSlave</name>
-          <version>22</version>
+          <version>24</version>
           <state>39</state>
         </option>
         <option>
@@ -144,7 +144,7 @@
         </option>
         <option>
           <name>CoreVariant</name>
-          <version>22</version>
+          <version>24</version>
           <state>39</state>
         </option>
         <option>
@@ -167,7 +167,7 @@
         </option>
         <option>
           <name>GFPUCoreSlave2</name>
-          <version>22</version>
+          <version>24</version>
           <state>39</state>
         </option>
       </data>
@@ -377,6 +377,8 @@
           <state>$PROJ_DIR$\..\Sources</state>
           <state>$PROJ_DIR$\..\Board_Files</state>
           <state>$PROJ_DIR$\..\Sources\I2C</state>
+          <state>$PROJ_DIR$\..\Sources\A2D</state>
+          <state>$PROJ_DIR$\..\Sources\Canbus</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -712,7 +714,7 @@
       <name>ILINK</name>
       <archiveVersion>0</archiveVersion>
       <data>
-        <version>16</version>
+        <version>17</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>1</debug>
         <option>
@@ -1001,6 +1003,10 @@
           <name>IlinkThreadsSlave</name>
           <state>1</state>
         </option>
+        <option>
+          <name>IlinkLogCallGraph</name>
+          <state>0</state>
+        </option>
       </data>
     </settings>
     <settings>
@@ -1155,7 +1161,7 @@
         </option>
         <option>
           <name>GBECoreSlave</name>
-          <version>22</version>
+          <version>24</version>
           <state>39</state>
         </option>
         <option>
@@ -1172,7 +1178,7 @@
         </option>
         <option>
           <name>CoreVariant</name>
-          <version>22</version>
+          <version>24</version>
           <state>39</state>
         </option>
         <option>
@@ -1195,7 +1201,7 @@
         </option>
         <option>
           <name>GFPUCoreSlave2</name>
-          <version>22</version>
+          <version>24</version>
           <state>39</state>
         </option>
       </data>
@@ -1739,7 +1745,7 @@
       <name>ILINK</name>
       <archiveVersion>0</archiveVersion>
       <data>
-        <version>16</version>
+        <version>17</version>
         <wantNonLocal>1</wantNonLocal>
         <debug>0</debug>
         <option>
@@ -2028,6 +2034,10 @@
           <name>IlinkThreadsSlave</name>
           <state>1</state>
         </option>
+        <option>
+          <name>IlinkLogCallGraph</name>
+          <state>0</state>
+        </option>
       </data>
     </settings>
     <settings>
@@ -2123,9 +2133,30 @@
   <group>
     <name>sources</name>
     <group>
+      <name>A2D</name>
+      <file>
+        <name>$PROJ_DIR$\..\Sources\A2D\ADC.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Sources\A2D\ADC.h</name>
+      </file>
+    </group>
+    <group>
       <name>Acc</name>
       <file>
         <name>$PROJ_DIR$\..\Sources\Acc\acc_task.c</name>
+      </file>
+    </group>
+    <group>
+      <name>Canbus</name>
+      <file>
+        <name>$PROJ_DIR$\..\Sources\Canbus\canbus.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Sources\Canbus\canbus.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\Sources\Canbus\fsl_flexcan_irq.c</name>
       </file>
     </group>
     <group>
@@ -2165,10 +2196,34 @@
       <name>$PROJ_DIR$\..\Sources\tasks_list.h</name>
     </file>
     <file>
+      <name>$PROJ_DIR$\..\Sources\tester.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Sources\tester.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\Sources\uart_configuration.c</name>
     </file>
     <file>
       <name>$PROJ_DIR$\..\Sources\uart_configuration.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Sources\usb_descriptor.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Sources\usb_descriptor.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Sources\uut.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Sources\uut.h</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Sources\virtual_com.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Sources\virtual_com.h</name>
     </file>
   </group>
   <group>
@@ -2176,22 +2231,22 @@
     <group>
       <name>Debug_console</name>
       <file>
-        <name>Y:\Aviram\obc_5_mcu\MQX_OS\BSP\platform\utilities\src\fsl_debug_console.c</name>
+        <name>$PROJ_DIR$\..\..\MQX_OS\BSP\platform\utilities\src\fsl_debug_console.c</name>
       </file>
       <file>
-        <name>Y:\Aviram\obc_5_mcu\MQX_OS\BSP\platform\utilities\inc\fsl_debug_console.h</name>
+        <name>$PROJ_DIR$\..\..\MQX_OS\BSP\platform\utilities\inc\fsl_debug_console.h</name>
       </file>
       <file>
-        <name>Y:\Aviram\obc_5_mcu\MQX_OS\BSP\platform\utilities\src\fsl_misc_utilities.c</name>
+        <name>$PROJ_DIR$\..\..\MQX_OS\BSP\platform\utilities\src\fsl_misc_utilities.c</name>
       </file>
       <file>
-        <name>Y:\Aviram\obc_5_mcu\MQX_OS\BSP\platform\utilities\inc\fsl_misc_utilities.h</name>
+        <name>$PROJ_DIR$\..\..\MQX_OS\BSP\platform\utilities\inc\fsl_misc_utilities.h</name>
       </file>
       <file>
-        <name>Y:\Aviram\obc_5_mcu\MQX_OS\BSP\platform\utilities\src\print_scan.c</name>
+        <name>$PROJ_DIR$\..\..\MQX_OS\BSP\platform\utilities\src\print_scan.c</name>
       </file>
       <file>
-        <name>Y:\Aviram\obc_5_mcu\MQX_OS\BSP\platform\utilities\src\print_scan.h</name>
+        <name>$PROJ_DIR$\..\..\MQX_OS\BSP\platform\utilities\src\print_scan.h</name>
       </file>
     </group>
   </group>

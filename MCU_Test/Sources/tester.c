@@ -101,7 +101,7 @@ extern char* wait_for_recieve_massage();
 
 _queue_id   tester_qid;
 APPLICATION_MESSAGE_PTR_T tester_msg_ptr;
-APPLICATION_MESSAGE_PTR_T uut_msg_recieve_ptr;
+APPLICATION_MESSAGE_PTR_T uutt_msg_recieve_ptr;
 
 TESTER_PARAMETER_LIST_T tester_parameters =
 {
@@ -573,26 +573,26 @@ uint32_t test_j1708()
 	_msgq_send(tester_msg_ptr);
 
 	//wait for j1708 massage:
-	uut_msg_recieve_ptr = _msgq_receive(tester_qid, 6000);
-	if (uut_msg_recieve_ptr != NULL)
+	uutt_msg_recieve_ptr = _msgq_receive(tester_qid, 6000);
+	if (uutt_msg_recieve_ptr != NULL)
 	{
 		//check getting : "8071j"
 		//search for command:
-		if(!strcmp((char*)uut_msg_recieve_ptr->data, (char*)string_j1708_back))
+		if(!strcmp((char*)uutt_msg_recieve_ptr->data, (char*)string_j1708_back))
 		{
 			memset(uart_massage,0x0,sizeof(uart_massage));
 			sprintf((char*)uart_massage, "j1708 test pass \r\n");
 			cdc_write((uint8_t *)uart_massage, strlen(uart_massage));
-			_msg_free(uut_msg_recieve_ptr);
+			_msg_free(uutt_msg_recieve_ptr);
 			return 0;
 		}
 		else
 		{
 			memset(uart_massage,0x0,sizeof(uart_massage));
-			sprintf((char*)uart_massage, "j1708 test failed - value=%s\n",(char*)uut_msg_recieve_ptr->data);
+			sprintf((char*)uart_massage, "j1708 test failed - value=%s\n",(char*)uutt_msg_recieve_ptr->data);
 			cdc_write((uint8_t *)uart_massage, strlen(uart_massage));
 
-			_msg_free(uut_msg_recieve_ptr);
+			_msg_free(uutt_msg_recieve_ptr);
 			return 1;
 		}
 
