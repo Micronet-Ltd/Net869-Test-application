@@ -66,10 +66,8 @@
 
 #define USB_DEBUG 0
 
-int printf_debug(const char *, ...);//PRINTF
+extern int printf_debug(const char *, ...);//PRINTF
 #define USB_PRINTF        printf_debug
-
-int printf_debug(const char  *fmt_s, ...){return 0;}
 
 #if (USB_DEBUG && _DEBUG)
 #define USB_DEBUG_PRINTF	1

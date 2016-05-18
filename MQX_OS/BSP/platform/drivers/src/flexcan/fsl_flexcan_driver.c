@@ -941,7 +941,7 @@ static flexcan_status_t FLEXCAN_DRV_StartRxMessageFifoData(
  *END**************************************************************************/
 static void FLEXCAN_DRV_CompleteSendData(uint32_t instance)
 {
-	uint32_t i = 0;
+    uint32_t i = 0;
     assert(instance < CAN_INSTANCE_COUNT);
     CAN_Type * base = g_flexcanBase[instance];
     flexcan_state_t * state = g_flexcanStatePtr[instance];
@@ -956,12 +956,14 @@ static void FLEXCAN_DRV_CompleteSendData(uint32_t instance)
     {
     	for(i=0;i<500000;i++)
     	{
-    		i=i++;
+    		i++;
+			i=i;
     	}
         OSA_SemaPost(&state->txIrqSync);
     	for(i=0;i<500000;i++)
     	{
-    		i=i++;
+    		i++;
+			i=i;
     	}
     }
 
@@ -995,12 +997,14 @@ static void FLEXCAN_DRV_CompleteRxMessageBufferData(uint32_t instance)
     {
     	for(i=0;i<500000;i++)
     	{
-    		i=i++;
+    		i++;
+			i=i;
     	}
         OSA_SemaPost(&state->rxIrqSync);
         for(i=0;i<500000;i++)
 		{
-			i=i++;
+			i++;
+			i=i;
 		}
     }
     /* Update the information of the module driver state */
