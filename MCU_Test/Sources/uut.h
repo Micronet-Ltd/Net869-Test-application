@@ -20,16 +20,19 @@
 #ifndef _UUT_H
 #define _UUT_H
 
-#define MAX_UART_UUT_COMMAND_SIZE 10
+#define MAX_UART_UUT_COMMAND_SIZE 14
 
 //command getting from cdc uart:
 typedef enum {
 	NO_UUT_COMMAND		=	0,
 	UART_UUT_COMMAND		 ,
+	BUTTON_UUT_COMMAND		 ,
 	J1708_UUT_COMMAND        ,
 	A2D_UUT_COMMAND        	 ,
 	CANBUS1_UUT_COMMAND		 ,
 	CANBUS2_UUT_COMMAND      ,
+	CANBUS1_TERM_UUT_COMMAND ,
+	CANBUS2_TERM_UUT_COMMAND ,
 	WIGGLE_UUT_COMMAND		 ,
 	ACC_UUT_COMMAND			 ,
 	LED_UUT_START_COMMAND    ,
@@ -49,10 +52,13 @@ typedef struct
 typedef struct
 {
 	UART_COMMAND_T uart;
+	UART_COMMAND_T button;
 	UART_COMMAND_T j1708;
 	UART_COMMAND_T a2d;
 	UART_COMMAND_T canbus1;
 	UART_COMMAND_T canbus2;
+	UART_COMMAND_T canbus1_term;
+	UART_COMMAND_T canbus2_term;
 	UART_COMMAND_T wiggle;
 	UART_COMMAND_T acc;
 	UART_COMMAND_T led;
@@ -66,6 +72,11 @@ UART_COMMAND_LIST_T uart_command_list =
 				"uart",
 				4,
 				UART_UUT_COMMAND
+		},
+		{
+				"button",
+				6,
+				BUTTON_UUT_COMMAND
 		},
 		{
 				"j1708",
@@ -86,6 +97,16 @@ UART_COMMAND_LIST_T uart_command_list =
 				"canbus2",
 				7,
 				CANBUS2_UUT_COMMAND
+		},
+		{
+				"trmCans1",
+				8,
+				CANBUS1_TERM_UUT_COMMAND
+		},
+		{
+				"trmCans2",
+				8,
+				CANBUS2_TERM_UUT_COMMAND
 		},
 		{
 				"wiggle",

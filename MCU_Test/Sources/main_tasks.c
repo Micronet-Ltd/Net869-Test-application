@@ -24,6 +24,8 @@ void MQX_PORTA_IRQHandler(void);
 void MQX_PORTC_IRQHandler(void);
 char* wait_for_recieve_massage();
 bool reset_flag = false;
+bool button_pressed = false;
+
 #define	MAIN_TASK_SLEEP_PERIOD	10			// 10 mSec sleep
 #define TIME_ONE_SECOND_PERIOD	((int) (1000 / MAIN_TASK_SLEEP_PERIOD))
 #define EVENT_SCAN 0x20 //scan event
@@ -234,6 +236,11 @@ void Main_task( uint32_t initial_data ) {
     GPIO_DRV_ClearPinOutput(CAN1_TERM_ENABLE);
     GPIO_DRV_ClearPinOutput(CAN2_TERM_ENABLE);
 
+  //  _time_delay(4000);
+  //  GPIO_DRV_SetPinOutput(CAN1_TERM_ENABLE);
+  //  GPIO_DRV_SetPinOutput(CAN2_TERM_ENABLE);
+ //   _time_delay(4000);
+
     //Initialize CAN sample
     configure_can_pins(0);
     configure_can_pins(1);
@@ -335,10 +342,20 @@ void OTG_CONTROL (void)
 
 void MQX_PORTA_IRQHandler(void)
 {
+
+
 	if (GPIO_DRV_IsPinIntPending (VIB_SENS)) {
 		GPIO_DRV_ClearPinIntFlag(VIB_SENS);
 		wiggle_sensor_cnt++;
 	}
+
+	if (GPIO_DRV_IsPinIntPending (BUTTON1)) {
+			GPIO_DRV_ClearPinIntFlag(BUTTON1);
+
+			button_pressed = true;
+	}
+
+
 }
 
 void MQX_PORTC_IRQHandler(void)

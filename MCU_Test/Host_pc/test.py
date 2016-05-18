@@ -57,6 +57,7 @@ time.sleep(1)
 #ask user to press reset
 user_input = input(' Please press the Reset button on the UUT, \r\n press enter in the PC. after pressing the Reset button\r\n ')
 
+user_input = input(' Please press the Help button on the UUT , \r\n press enter in the PC. after pressing the Help button')
 
 #read reset_done
 ##if(s_reset_result == 'reset_pass'):
@@ -71,8 +72,16 @@ end_of_test = True
 while end_of_test:
     out = ser.readlines()
     for i in out:
-        if (i.decode() != 'led_test_start\r\n'):
+        
+
+  	
+        if (i.decode() =='not pressed\n'):
+            f.write('button not pressed\n')		
+        elif (i.decode() =='pressed\n'): 
+            f.write('button pressed\n')		
+        elif (i.decode() != 'led_test_start\r\n'):		
             f.write(i.decode())
+			
         if (i == string_end_of_test):
             end_of_test = False
             #print(i)
