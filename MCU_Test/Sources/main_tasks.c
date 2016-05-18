@@ -23,6 +23,8 @@ void MQX_I2C0_IRQHandler (void);
 void MQX_PORTA_IRQHandler(void);
 void MQX_PORTC_IRQHandler(void);
 char* wait_for_recieve_massage();
+bool reset_flag = false;
+bool button_pressed = false;
 
 #define	MAIN_TASK_SLEEP_PERIOD	10			// 10 mSec sleep
 #define TIME_ONE_SECOND_PERIOD	((int) (1000 / MAIN_TASK_SLEEP_PERIOD))
@@ -209,6 +211,13 @@ void Main_task( uint32_t initial_data ) {
 		//print yuvalf("\nMain Could not create J1708_RX_TASK\n");
 	}
 
+	g_TASK_ids[LED_TASK] = _task_create(0, LED_TASK, 0 );
+	if (g_TASK_ids[LED_TASK] == MQX_NULL_TASK_ID)
+	{
+		//print yuvalf("\nMain Could not create J1708_RX_TASK\n");
+	}
+
+
 	g_TASK_ids[FPGA_UART_RX_TASK] = _task_create(0, FPGA_UART_RX_TASK, 0 );
 	if (g_TASK_ids[FPGA_UART_RX_TASK] == MQX_NULL_TASK_ID)
 	{
@@ -230,6 +239,11 @@ void Main_task( uint32_t initial_data ) {
     //Disable CAN termination
     GPIO_DRV_ClearPinOutput(CAN1_TERM_ENABLE);
     GPIO_DRV_ClearPinOutput(CAN2_TERM_ENABLE);
+
+  //  _time_delay(4000);
+  //  GPIO_DRV_SetPinOutput(CAN1_TERM_ENABLE);
+  //  GPIO_DRV_SetPinOutput(CAN2_TERM_ENABLE);
+ //   _time_delay(4000);
 
     //Initialize CAN sample
     configure_can_pins(0);
@@ -254,7 +268,7 @@ void Main_task( uint32_t initial_data ) {
 
     while ( 1 ) {
 
-//#if 0
+#if 0
 		GPIO_DRV_ClearPinOutput (LED_RED);
 		GPIO_DRV_ClearPinOutput (LED_GREEN);
 		GPIO_DRV_ClearPinOutput (LED_BLUE);
@@ -271,7 +285,7 @@ void Main_task( uint32_t initial_data ) {
 		GPIO_DRV_ClearPinOutput (LED_GREEN);
 		GPIO_DRV_SetPinOutput   (LED_BLUE);
 		_time_delay (1000);
-//#endif
+#endif
 
 
 		//add by ruslan:
@@ -332,10 +346,20 @@ void OTG_CONTROL (void)
 
 void MQX_PORTA_IRQHandler(void)
 {
+
+
 	if (GPIO_DRV_IsPinIntPending (VIB_SENS)) {
 		GPIO_DRV_ClearPinIntFlag(VIB_SENS);
 		wiggle_sensor_cnt++;
 	}
+
+	if (GPIO_DRV_IsPinIntPending (BUTTON1)) {
+			GPIO_DRV_ClearPinIntFlag(BUTTON1);
+
+			button_pressed = true;
+	}
+
+
 }
 
 void MQX_PORTC_IRQHandler(void)
@@ -358,9 +382,10 @@ void scan_task()
 		if(!strcmp(scan_string,"MCU_started\n"))
 		{
 
-			memset(scan_string,0x0,sizeof(scan_string));
-			sprintf(scan_string, "Reset Button pressed\r\n");
-			cdc_write((uint8_t *)scan_string, strlen((char*)scan_string));
+			//memset(scan_string,0x0,sizeof(scan_string));
+			//sprintf(scan_string, "Reset Button pressed\r\n");
+			//cdc_write((uint8_t *)scan_string, strlen((char*)scan_string));
+			reset_flag = true;
 		}
 		else
 		{

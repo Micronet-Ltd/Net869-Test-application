@@ -29,6 +29,7 @@
 #include "ADC.h"
 #include "fsl_i2c_master_driver.h"
 #include "fsl_flexcan_hal.h"
+#include "fpga_api.h"
 /*****************************************************************************
  * Constant and Macro's - None
  *****************************************************************************/
@@ -50,15 +51,19 @@
 extern _pool_id   g_out_message_pool;
 extern uint32_t wiggle_sensor_cnt;
 extern uint8_t* wait_for_recieve_massage();
+extern _task_id   g_TASK_ids[NUM_TASKS];
+extern bool button_pressed;
 
 void set_queue_target(APPLICATION_QUEUE_T queue_target);
-
-
+void help_button_interrupt_init();
+void * g_help_button_event_h;
 _queue_id   uut_qid;
 APPLICATION_MESSAGE_PTR_T uut_msg_ptr;
 APPLICATION_MESSAGE_PTR_T uut_msg_recieve_ptr;
 bool uut_reset = TRUE; // uut out from reset with this default state
 void* uut_scan_event_h;
+bool start_led = false;
+
 /*****************************************************************************
  * Local Types - None
  *****************************************************************************/
@@ -94,11 +99,37 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 	switch (command_type)
 	{
 
+	case BUTTON_UUT_COMMAND:
+
+		if(button_pressed)
+		{
+			sprintf((char*)buffer, "ack:pressed\n");
+		}
+		else
+		{
+			sprintf((char*)buffer, "ack:not pressed\n");
+		}
+
+		button_pressed = false;
+
+		printf("%s",buffer);
+		break;
+
 	case UART_UUT_COMMAND:
 
 		//send tester side acknowledge:
 		sprintf((char*)buffer, "ack:uart test pass\n");
 		printf("%s",buffer);
+		break;
+	case LED_UUT_START_COMMAND:
+		if(start_led)
+		{
+			start_led = false;
+		}
+		else
+		{
+			start_led = true;
+		}
 		break;
 
 	case J1708_UUT_COMMAND:
@@ -180,13 +211,32 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 
 	case CANBUS1_UUT_COMMAND:
 	case CANBUS2_UUT_COMMAND:
-
+	case CANBUS1_TERM_UUT_COMMAND:
+	case CANBUS2_TERM_UUT_COMMAND:
 		 //rxMailbxNum 			8
 		 //txMailbxNum			9
 		 //rxId					0x456
 		 //txId					0x123
 		//canbus instance       1 //0 or 1
-		if(CANBUS1_UUT_COMMAND == command_type)
+/*
+		if(CANBUS1_TERM_UUT_COMMAND == command_type)
+		{
+			GPIO_DRV_SetPinOutput(CAN1_TERM_ENABLE);
+			_time_delay(1000);
+		}
+		else if(CANBUS2_TERM_UUT_COMMAND == command_type)
+		{
+			GPIO_DRV_SetPinOutput(CAN2_TERM_ENABLE);
+			_time_delay(1000);
+		}
+		else
+		{
+			GPIO_DRV_ClearPinOutput(CAN1_TERM_ENABLE);
+			GPIO_DRV_ClearPinOutput(CAN2_TERM_ENABLE);
+		}
+*/
+
+		if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS1_TERM_UUT_COMMAND == command_type))
 		{
 			canbus_init(8, 9,  0x456,0x123 , 0);
 		}
@@ -194,6 +244,9 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		{
 			canbus_init(8, 9,  0x456,0x123 , 1);
 		}
+
+
+
 
 		sprintf((char*)buffer, "ack:can\n");
 		printf("%s",buffer);
@@ -210,7 +263,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 			i=i;
 		}
 
-		if(CANBUS1_UUT_COMMAND == command_type)
+		if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS1_TERM_UUT_COMMAND == command_type))
 		{
 			sprintf((char*)candata_compare, "canbus1");
 		}
@@ -222,7 +275,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		//delay for tester to be ready to recieve canbus:
 		if(!strcmp((char*)can_buff.data,(char*)candata_compare))
 		{
-			if(CANBUS1_UUT_COMMAND == command_type)
+			if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS1_TERM_UUT_COMMAND == command_type))
 			{
 				sprintf((char*)candata_compare, "1subnac");
 			}
@@ -236,6 +289,10 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 					}
 			canbus_transmit(candata_compare,7);
 		}
+		else
+		{
+			i=i++;
+		}
 
 		for(i=0;i<10000;)
 		{
@@ -244,7 +301,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		//send back
 		_time_delay(1000);
 
-		if(CANBUS1_UUT_COMMAND == command_type)
+		if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS1_TERM_UUT_COMMAND == command_type))
 		{
 			canbus_deinit(0);
 		}
@@ -348,6 +405,22 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 				command_size = uart_command_list.canbus2.size;
 				command_type = uart_command_list.canbus2.type;
 			break;
+		case CANBUS1_TERM_UUT_COMMAND:
+				sprintf(command_string, uart_command_list.canbus1_term.string, uart_command_list.canbus1_term.size);
+				command_size = uart_command_list.canbus1_term.size;
+				command_type = uart_command_list.canbus1_term.type;
+			break;
+		case BUTTON_UUT_COMMAND:
+				sprintf(command_string, uart_command_list.button.string, uart_command_list.button.size);
+				command_size = uart_command_list.button.size;
+				command_type = uart_command_list.button.type;
+			break;
+
+		case CANBUS2_TERM_UUT_COMMAND:
+				sprintf(command_string, uart_command_list.canbus2_term.string, uart_command_list.canbus2_term.size);
+				command_size = uart_command_list.canbus2_term.size;
+				command_type = uart_command_list.canbus2_term.type;
+			break;
 		case WIGGLE_UUT_COMMAND:
 				sprintf(command_string, uart_command_list.wiggle.string, uart_command_list.wiggle.size);
 				command_size = uart_command_list.wiggle.size;
@@ -359,7 +432,11 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 								command_size = uart_command_list.acc.size;
 								command_type = uart_command_list.acc.type;
 							break;
-
+		case LED_UUT_START_COMMAND:
+								sprintf(command_string, uart_command_list.led.string, uart_command_list.led.size);
+								command_size = uart_command_list.led.size;
+								command_type = uart_command_list.led.type;
+							break;
 		}
 
 
@@ -404,13 +481,107 @@ bool wait_for_uart_massage_uut(UART_COMMAND_NUMBER_T* command , uint32_t* size)
 	return false;
 }
 
+void led_task()
+{
+	uint8_t Br, R,G,B;
+	Br = 10;
 
+
+	while(1)
+	{
+
+		if(start_led)
+		{
+
+			R = 255;
+			G = 0;
+			B = 0;
+
+			FPGA_write_led_status (LED_RIGHT , &Br, &R, &G, &B);
+			FPGA_write_led_status (LED_MIDDLE, &Br, &R, &G, &B);
+			GPIO_DRV_ClearPinOutput (LED_GREEN);
+			GPIO_DRV_ClearPinOutput (LED_BLUE);
+			GPIO_DRV_SetPinOutput   (LED_RED);
+			if(start_led)
+			{
+				_time_delay(1000);
+			}
+
+			R = 0;
+			G = 255;
+			B = 0;
+
+			FPGA_write_led_status (LED_RIGHT , &Br, &R, &G, &B);
+			FPGA_write_led_status (LED_MIDDLE, &Br, &R, &G, &B);
+			GPIO_DRV_ClearPinOutput (LED_RED);
+			GPIO_DRV_SetPinOutput (LED_GREEN);
+			GPIO_DRV_ClearPinOutput (LED_BLUE);
+			if(start_led)
+			{
+				_time_delay(1000);
+			}
+
+			R = 0;
+			G = 0;
+			B = 255;
+
+			FPGA_write_led_status (LED_RIGHT , &Br, &R, &G, &B);
+			FPGA_write_led_status (LED_MIDDLE, &Br, &R, &G, &B);
+			GPIO_DRV_ClearPinOutput (LED_RED);
+			GPIO_DRV_ClearPinOutput (LED_GREEN);
+			GPIO_DRV_SetPinOutput (LED_BLUE);
+
+
+
+		}
+
+		_time_delay(1000);
+	}
+
+	_task_block();
+}
+
+
+/*
+void help_button_task (void)
+{
+
+	_mqx_uint event_result;
+	uint32_t pin_input = 0;
+
+
+	event_result = _event_create("event.HelpButtonInt");
+	if(MQX_OK != event_result){	}
+
+	event_result = _event_open("event.HelpButtonInt", &g_help_button_event_h);
+	if(MQX_OK != event_result){	}
+
+
+	while(1)
+	{
+		_event_wait_all(g_help_button_event_h, 1, 0);
+		_event_clear(g_help_button_event_h, 1);
+
+		pin_input = GPIO_DRV_ReadPinInput (BUTTON1);
+
+		//send massage on reset:
+		sprintf((char*)buffer, "MCU_button_press\n");
+		printf("%s",buffer);
+
+	}
+
+	_task_block();
+
+}
+*/
 void uut_task()
 {
 	uint32_t size = 0;
 	bool status = false;
 	UART_COMMAND_NUMBER_T command;
 	_mqx_uint event_result;
+
+	//help_button_interrupt_init();
 
 	event_result = _event_create("uut_scan");
 	if(MQX_OK != event_result){	}
@@ -429,6 +600,10 @@ void uut_task()
 	//send massage on reset:
 	sprintf((char*)buffer, "MCU_started\n");
 	printf("%s",buffer);
+
+
+
+
 
 	while (1)
 	{

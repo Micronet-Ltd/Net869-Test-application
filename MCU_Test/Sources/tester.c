@@ -40,7 +40,8 @@
 #define ACK_FAIL 2
 
 #define MAX_COMMAND_LENGTH	20
-
+#define NO_TERMINATION 0
+#define TERMINATION 1
 /*****************************************************************************
  * Local Types - None
  *****************************************************************************/
@@ -48,6 +49,9 @@
 //command getting from cdc uart:
 typedef enum {
 	FULL_TEST = 0        , // !! must be first so when changing from menu to test all it recognize string "test_"
+	LED_TEST			 ,
+	RESET_TEST           ,
+	BUTTON_TEST          ,
 	MENU_UART			 ,
 	MENU_J1708			 ,
 	MENU_A2D			 ,
@@ -74,15 +78,19 @@ typedef struct
 void clear_screan();
 void menu_display();
 void command_list_init();
-uint32_t test_canbus(COMMAND_NUMBER_T command);
+uint32_t test_canbus(COMMAND_NUMBER_T command, bool termination);
 uint32_t test_acc();
 uint32_t test_j1708();
 uint32_t test_wiggle();
 uint32_t test_a2d();
 uint32_t test_uart();
+uint32_t test_led();
+uint32_t test_reset();
+uint32_t test_button();
+
 void tester_parser(COMMAND_NUMBER_T command);
 bool cdc_search_command(COMMAND_NUMBER_T* command, char* buffer, uint32_t* buffer_size);
-
+extern bool reset_flag;
 /****************************************************************************
  * Global Variables
  ****************************************************************************/
@@ -143,7 +151,10 @@ void command_list_init()
 	strcpy(command_list[MENU_CANBUS2],"5");
 	strcpy(command_list[MENU_WIGGLE],"6");
 	strcpy(command_list[MENU_ACC],"7");
-	strcpy(command_list[FULL_TEST],"test_");
+	strcpy(command_list[LED_TEST],"led_test_start");
+	strcpy(command_list[RESET_TEST],"reset_test_start");
+	strcpy(command_list[BUTTON_TEST],"button_test_start");
+	strcpy(command_list[FULL_TEST],"id:");
 }
 
 
@@ -295,6 +306,16 @@ void tester_parser(COMMAND_NUMBER_T command)
 		menu_display();
 
 		break;
+	case LED_TEST:
+		test_led();
+		reset_flag = false; //next test is reset so reset flag before  reset check
+		break;
+	case RESET_TEST:
+		test_reset();
+		break;
+	case BUTTON_TEST:
+		test_button();
+		break;
 	case FULL_TEST:
 
 		tester_parameters.menu_mode_on = FALSE;
@@ -307,9 +328,22 @@ void tester_parser(COMMAND_NUMBER_T command)
 		}
 
 		//print card id
-		memset(buffer_print,0x0,sizeof(buffer_print));
-		sprintf(buffer_print, "id:%s\n", card_id);
-		cdc_write((uint8_t *)buffer_print, strlen(buffer_print));
+		//memset(buffer_print,0x0,sizeof(buffer_print));
+		//sprintf(buffer_print, "id:%s\n", card_id);
+		//cdc_write((uint8_t *)buffer_print, strlen(buffer_print));
+
+		test_status = test_reset();
+		if(test_status)
+		{
+			error_number++;
+		}
+
+		test_status = test_button();
+
+		if(test_status)
+		{
+			error_number++;
+		}
 
 		test_status = test_uart();
 
@@ -323,18 +357,41 @@ void tester_parser(COMMAND_NUMBER_T command)
 		{
 			error_number++;
 		}
-
-		test_status = test_canbus(MENU_CANBUS1);
+		//GPIO_DRV_ClearPinOutput(CAN1_TERM_ENABLE);
+		//_time_delay(1000);
+		test_status = test_canbus(MENU_CANBUS1, NO_TERMINATION);
 
 		if(test_status)
 		{
 			error_number++;
 		}
+		else
+		{
+			//GPIO_DRV_SetPinOutput(CAN1_TERM_ENABLE);
+			//_time_delay(1000);
+			test_status = test_canbus(MENU_CANBUS1, TERMINATION);
+			if(!test_status) // should response with error
+			{
+				error_number++;
+			}
+		}
 
-		test_status = test_canbus(MENU_CANBUS2);
+		//GPIO_DRV_ClearPinOutput(CAN2_TERM_ENABLE);
+		//_time_delay(1000);
+		test_status = test_canbus(MENU_CANBUS2, NO_TERMINATION);
 		if(test_status)
 		{
 			error_number++;
+		}
+		else
+		{
+			//GPIO_DRV_SetPinOutput(CAN2_TERM_ENABLE);
+			//_time_delay(1000);
+			test_status = test_canbus(MENU_CANBUS2, TERMINATION);
+			if(!test_status) // should response with error
+			{
+				error_number++;
+			}
 		}
 
 		test_status = test_a2d();
@@ -381,7 +438,7 @@ void tester_parser(COMMAND_NUMBER_T command)
 		break;
 	case MENU_CANBUS1:
 	case MENU_CANBUS2:
-		test_canbus(command);
+		test_canbus(command, TERMINATION);
 		break;
 	case MENU_A2D:
 		test_a2d();
@@ -503,6 +560,65 @@ uint32_t test_a2d()
 
 }
 
+uint32_t test_button()
+{
+	uint32_t error = 0;
+	char uart_massage[50] = {0};
+	memset(uart_massage,0x0,sizeof(uart_massage));
+	bool result = false;
+	bool uart_status = 0;
+	bool ack = FALSE;
+	//send uart:
+	sprintf((char*)uart_massage, "button\n",7);
+	printf("%s",uart_massage);
+
+	//wait for uart:
+	result = wait_for_uart_massage_tester(&ack, uart_massage);
+	if(result)
+	{
+		memset(uart_massage,0x0,sizeof(uart_massage));
+
+		sprintf(uart_massage, "help  test failed - no UART ack\r\n");
+		cdc_write((uint8_t *)uart_massage, strlen(uart_massage));
+	}
+
+	sprintf(uart_massage, "%s\r",uart_massage);
+	cdc_write((uint8_t *)uart_massage, strlen(uart_massage));
+
+	return error;
+}
+
+uint32_t test_reset()
+{
+	uint32_t error = 0;
+	char uart_massage[50] = {0};
+	memset(uart_massage,0x0,sizeof(uart_massage));
+
+	if(reset_flag)
+	{
+		sprintf(uart_massage, "reset  done\r\n");
+	}
+	else
+	{
+		sprintf(uart_massage, "reset not done\r\n");
+		error++;
+	}
+
+	cdc_write((uint8_t *)uart_massage, strlen(uart_massage));
+	reset_flag = false;
+
+	return error;
+}
+
+uint32_t test_led()
+{
+	char uart_massage[50] = {0};
+
+	//send uut to turn led on turn leds on:
+	sprintf((char*)uart_massage, "led_start\n",4);
+	printf("%s",uart_massage);
+}
+
 uint32_t test_uart()
 {
 	bool uart_status = 0;
@@ -608,7 +724,7 @@ uint32_t test_j1708()
 
 }
 
-uint32_t test_canbus(COMMAND_NUMBER_T command)
+uint32_t test_canbus(COMMAND_NUMBER_T command, bool termination)
 {
 	bool ack = FALSE;
 	char uart_massage[50] = {0};
@@ -623,14 +739,31 @@ uint32_t test_canbus(COMMAND_NUMBER_T command)
 		canbus_init(9, 8,  0x123,0x456 , 1);
 	}
 
+
+
+
 	//send canbus:
 	if(MENU_CANBUS1 == command)
 	{
-		sprintf(buffer_print, "canbus1\n",7);
+		if(termination)
+		{
+			sprintf(buffer_print, "term_canbus1\n",7);
+		}
+		else
+		{
+			sprintf(buffer_print, "trmCans1\n",7);
+		}
 	}
 	else
 	{
-		sprintf(buffer_print, "canbus2\n",7);
+		if(termination)
+		{
+			sprintf(buffer_print, "trmCans2\n",7);
+		}
+		else
+		{
+			sprintf(buffer_print, "canbus2\n",7);
+		}
 	}
 
 	printf("%s",buffer_print);
@@ -851,6 +984,11 @@ void tester_task()
 
 	tester_parameters.menu_mode_on = false;
 	tester_parameters.tester_busy = false;
+
+
+	 // GPIO_DRV_SetPinOutput(CAN1_TERM_ENABLE);
+	 // GPIO_DRV_SetPinOutput(CAN2_TERM_ENABLE);
+
 
 	while (1)
 	{

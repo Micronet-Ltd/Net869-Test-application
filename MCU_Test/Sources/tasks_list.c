@@ -8,6 +8,7 @@ extern void scan_task        (uint32_t);
 extern void Acc_task         (uint32_t);
 extern void tester_task      (uint32_t);
 extern void uut_task         (uint32_t);
+extern void led_task         (uint32_t);
 extern void J1708_Tx_task     (uint32_t);
 extern void J1708_Rx_task     (uint32_t);
 extern void FPGA_UART_Rx_task (uint32_t );
@@ -24,6 +25,7 @@ TASK_TEMPLATE_STRUCT MQX_template_list[] =
 	{ TESTER_TASK,	        tester_task,	    4000,		TESTER_TASK_PRIORITY,		"TESTER_TASK",	    	0,							0,				0 },
 	{ UUT_TASK,	            uut_task,			2500,		UUT_TASK_PRIORITY,			"UUT_TASK",				0,							0,				0 },
 	{ SCAN_TASK,	        scan_task,			1000,		SCAN_TASK_PRIORITY,			"SCAN_TASK",			0,							0,				0 },
+	{ LED_TASK,	            led_task,			1500,		LED_TASK_PRIORITY,			"LED_TASK",				0,							0,				0 },
 
 	{ 0	}
 };
