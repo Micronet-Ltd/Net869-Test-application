@@ -23,6 +23,7 @@
 #include "fsl_flexcan_hal.h"
 
 void canbus_init(
+		        uint32_t bitrate,
 				uint32_t rxMailbxNum,
 				uint32_t txMailbxNum,
 				//uint32_t rxRemoteMailbxNum,

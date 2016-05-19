@@ -33,6 +33,8 @@ typedef enum {
 	CANBUS2_UUT_COMMAND      ,
 	CANBUS1_TERM_UUT_COMMAND ,
 	CANBUS2_TERM_UUT_COMMAND ,
+	SWC1_UUT_COMMAND         ,
+	SWC2_UUT_COMMAND		 ,
 	WIGGLE_UUT_COMMAND		 ,
 	ACC_UUT_COMMAND			 ,
 	LED_UUT_START_COMMAND    ,
@@ -59,6 +61,8 @@ typedef struct
 	UART_COMMAND_T canbus2;
 	UART_COMMAND_T canbus1_term;
 	UART_COMMAND_T canbus2_term;
+	UART_COMMAND_T swc1;
+	UART_COMMAND_T swc2;
 	UART_COMMAND_T wiggle;
 	UART_COMMAND_T acc;
 	UART_COMMAND_T led;
@@ -107,6 +111,16 @@ UART_COMMAND_LIST_T uart_command_list =
 				"trmCans2",
 				8,
 				CANBUS2_TERM_UUT_COMMAND
+		},
+		{
+				"swc1",
+				4,
+				SWC1_UUT_COMMAND
+		},
+		{
+				"swc2",
+				4,
+				SWC2_UUT_COMMAND
 		},
 		{
 				"wiggle",

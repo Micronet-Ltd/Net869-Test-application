@@ -42,6 +42,10 @@
 #define MAX_COMMAND_LENGTH	20
 #define NO_TERMINATION 0
 #define TERMINATION 1
+
+#define  BIT_RATE_33_33KHZ 	2 //for swc
+#define  BIT_RATE_1MHZ  	9 //for can
+
 /*****************************************************************************
  * Local Types - None
  *****************************************************************************/
@@ -64,6 +68,12 @@ typedef enum {
 	NO_COMMAND
 } COMMAND_NUMBER_T;
 
+typedef enum {
+	SWC = 0		,
+	ENABLE_TERM ,
+	DIS_TERM 	,
+}MODE_T;
+
 typedef struct
 {
 	bool menu_mode_on;
@@ -78,8 +88,9 @@ typedef struct
 void clear_screan();
 void menu_display();
 void command_list_init();
-uint32_t test_canbus(COMMAND_NUMBER_T command, bool termination);
+uint32_t test_canbus(COMMAND_NUMBER_T command, MODE_T mode);
 uint32_t test_acc();
+uint32_t test_scup();
 uint32_t test_j1708();
 uint32_t test_wiggle();
 uint32_t test_a2d();
@@ -359,7 +370,10 @@ void tester_parser(COMMAND_NUMBER_T command)
 		}
 		//GPIO_DRV_ClearPinOutput(CAN1_TERM_ENABLE);
 		//_time_delay(1000);
-		test_status = test_canbus(MENU_CANBUS1, NO_TERMINATION);
+
+		//TODO send for canbus1 enable termination:
+
+		test_status = test_canbus(MENU_CANBUS1, ENABLE_TERM);
 
 		if(test_status)
 		{
@@ -369,7 +383,9 @@ void tester_parser(COMMAND_NUMBER_T command)
 		{
 			//GPIO_DRV_SetPinOutput(CAN1_TERM_ENABLE);
 			//_time_delay(1000);
-			test_status = test_canbus(MENU_CANBUS1, TERMINATION);
+
+			//TODO send for canbus1 disabled termination:
+			test_status = test_canbus(MENU_CANBUS1, DIS_TERM);
 			if(!test_status) // should response with error
 			{
 				error_number++;
@@ -378,7 +394,9 @@ void tester_parser(COMMAND_NUMBER_T command)
 
 		//GPIO_DRV_ClearPinOutput(CAN2_TERM_ENABLE);
 		//_time_delay(1000);
-		test_status = test_canbus(MENU_CANBUS2, NO_TERMINATION);
+
+		//TODO send for enable cam2 termination:
+		test_status = test_canbus(MENU_CANBUS2, ENABLE_TERM);
 		if(test_status)
 		{
 			error_number++;
@@ -387,12 +405,35 @@ void tester_parser(COMMAND_NUMBER_T command)
 		{
 			//GPIO_DRV_SetPinOutput(CAN2_TERM_ENABLE);
 			//_time_delay(1000);
-			test_status = test_canbus(MENU_CANBUS2, TERMINATION);
+
+			//TODO send for disabled termination:
+			test_status = test_canbus(MENU_CANBUS2, DIS_TERM);
 			if(!test_status) // should response with error
 			{
 				error_number++;
 			}
 		}
+
+
+		//TODO send for swc1 no termination:
+		test_status = test_canbus(MENU_CANBUS1, SWC);
+		if(test_status)
+		{
+			error_number++;
+		}
+
+		test_status = test_canbus(MENU_CANBUS2, SWC);
+		if(test_status)
+		{
+			error_number++;
+		}
+
+		test_status = test_scup();
+		if(test_status)
+		{
+			error_number++;
+		}
+
 
 		test_status = test_a2d();
 		if(test_status)
@@ -724,41 +765,129 @@ uint32_t test_j1708()
 
 }
 
-uint32_t test_canbus(COMMAND_NUMBER_T command, bool termination)
+
+
+uint32_t test_scup()
+{
+
+}
+
+
+
+uint32_t test_canbus(COMMAND_NUMBER_T command, MODE_T mode)
 {
 	bool ack = FALSE;
 	char uart_massage[50] = {0};
 	uint32_t can_result;
+	uint32_t cansize = 0;
 
-	if(MENU_CANBUS1 == command)
-	{
-		canbus_init(9, 8,  0x123,0x456 , 0);
-	}
-	else
-	{
-		canbus_init(9, 8,  0x123,0x456 , 1);
-	}
 
+	if(mode ==SWC)
+	{
+		//Set SWC to operation mode
+		//Set CAN2 to regular mode twisted
+		GPIO_DRV_SetPinOutput(CAN2_SWC_SELECT);
+
+		//Set Speed to Normal 33KHz of NCV7356
+		GPIO_DRV_SetPinOutput(SWC_MODE0);
+		//GPIO_DRV_SetPinOutput(SWC_MODE1); // Configuratio Normal 33KHz Mode Mode0 High Mode1 High
+		GPIO_DRV_ClearPinOutput(SWC_MODE1); // Configuratio High up to 100Khz Mode Mode0 High Mode1 Low
+
+		//Enable SWC
+		GPIO_DRV_ClearPinOutput(SWC_ENABLE);
+		//GPIO_DRV_SetPinOutput(SWC_ENABLE);
+		_time_delay(500);
+
+		if(MENU_CANBUS1 == command)
+		{
+			canbus_init(BIT_RATE_33_33KHZ, 9, 8,  0x123,0x456 , 0);
+		}
+		else
+		{
+			canbus_init(BIT_RATE_33_33KHZ, 9, 8,  0x123,0x456 , 1);
+		}
+
+	}
+	else if(mode == DIS_TERM)
+	{
+	    //Unset CAN termination
+	    GPIO_DRV_SetPinOutput(CAN1_TERM_ENABLE);
+	    GPIO_DRV_SetPinOutput(CAN2_TERM_ENABLE);
+
+		//Set CAN2 to regular mode twisted
+		GPIO_DRV_ClearPinOutput(CAN2_SWC_SELECT);
+
+		//Set to sleep mode NCV7356
+		GPIO_DRV_ClearPinOutput(SWC_MODE0);
+		GPIO_DRV_ClearPinOutput(SWC_MODE1); // Configuration Sleep
+
+		//Enable SWC
+		GPIO_DRV_SetPinOutput(SWC_ENABLE);
+		_time_delay(500);
+
+		if(MENU_CANBUS1 == command)
+		{
+			canbus_init(BIT_RATE_1MHZ, 9, 8,  0x123,0x456 , 0);
+		}
+		else
+		{
+			canbus_init(BIT_RATE_1MHZ, 9, 8,  0x123,0x456 , 1);
+		}
+	}
+	else //	ENABLE_TERM
+	{
+	    //set CAN termination
+		GPIO_DRV_ClearPinOutput(CAN1_TERM_ENABLE);
+		GPIO_DRV_ClearPinOutput(CAN2_TERM_ENABLE);
+
+		//Set CAN2 to regular mode twisted
+		GPIO_DRV_ClearPinOutput(CAN2_SWC_SELECT);
+
+		//Set to sleep mode NCV7356
+		GPIO_DRV_ClearPinOutput(SWC_MODE0);
+		GPIO_DRV_ClearPinOutput(SWC_MODE1); // Configuration Sleep
+
+		//Enable SWC
+		GPIO_DRV_SetPinOutput(SWC_ENABLE);
+		_time_delay(500);
+
+		if(MENU_CANBUS1 == command)
+		{
+			canbus_init(BIT_RATE_1MHZ, 9, 8,  0x123,0x456 , 0);
+		}
+		else
+		{
+			canbus_init(BIT_RATE_1MHZ, 9, 8,  0x123,0x456 , 1);
+		}
+	}
 
 
 
 	//send canbus:
 	if(MENU_CANBUS1 == command)
 	{
-		if(termination)
+		if(mode == DIS_TERM)
 		{
-			sprintf(buffer_print, "term_canbus1\n",7);
+			sprintf(buffer_print, "trmCans1\n",7);
+		}
+		else if(mode == SWC)
+		{
+			sprintf(buffer_print, "swc1\n",7);
 		}
 		else
 		{
-			sprintf(buffer_print, "trmCans1\n",7);
+			sprintf(buffer_print, "canbus1\n",7);
 		}
 	}
 	else
 	{
-		if(termination)
+		if(mode == DIS_TERM)
 		{
 			sprintf(buffer_print, "trmCans2\n",7);
+		}
+		else if(mode == SWC)
+		{
+			sprintf(buffer_print, "swc2\n",7);
 		}
 		else
 		{
@@ -767,7 +896,7 @@ uint32_t test_canbus(COMMAND_NUMBER_T command, bool termination)
 	}
 
 	printf("%s",buffer_print);
-	uint32_t cansize = 0;
+
 
 	//wait for ack:
 	can_result = wait_for_uart_massage_tester(&ack, uart_massage);

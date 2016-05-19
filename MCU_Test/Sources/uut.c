@@ -41,6 +41,10 @@
 #define ACC_ID_VALUE 0x4A
 #define MIN_A2D_VALUE 3800
 #define MAX_A2D_VALUE 4400
+
+#define  BIT_RATE_33_33KHZ 	2 //for swc
+#define  BIT_RATE_1MHZ  	9 //for can
+
 /*****************************************************************************
  * Global Functions Prototypes
  *****************************************************************************/
@@ -213,6 +217,10 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 	case CANBUS2_UUT_COMMAND:
 	case CANBUS1_TERM_UUT_COMMAND:
 	case CANBUS2_TERM_UUT_COMMAND:
+	case SWC1_UUT_COMMAND:
+	case SWC2_UUT_COMMAND:
+
+
 		 //rxMailbxNum 			8
 		 //txMailbxNum			9
 		 //rxId					0x456
@@ -236,20 +244,97 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		}
 */
 
-		if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS1_TERM_UUT_COMMAND == command_type))
+		//TODO:
+		//if swc 33.3 kh
+		//if can so 1 Mhz
+		//BIT_RATE_33_33KHZ 	2 //for swc
+		//BIT_RATE_1MHZ
+		if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS2_UUT_COMMAND == command_type))
 		{
-			canbus_init(8, 9,  0x456,0x123 , 0);
-		}
-		else
-		{
-			canbus_init(8, 9,  0x456,0x123 , 1);
-		}
+		    //set CAN termination
+			GPIO_DRV_ClearPinOutput(CAN1_TERM_ENABLE);
+			GPIO_DRV_ClearPinOutput(CAN2_TERM_ENABLE);
+
+			//Set CAN2 to regular mode twisted
+			GPIO_DRV_ClearPinOutput(CAN2_SWC_SELECT);
+
+			//Set to sleep mode NCV7356
+			GPIO_DRV_ClearPinOutput(SWC_MODE0);
+			GPIO_DRV_ClearPinOutput(SWC_MODE1); // Configuration Sleep
+
+			//Enable SWC
+			GPIO_DRV_SetPinOutput(SWC_ENABLE);
+			_time_delay(500);
+
+			if(CANBUS1_UUT_COMMAND == command_type)
+			{
+				canbus_init(BIT_RATE_1MHZ, 8, 9,  0x456,0x123 , 0);
+			}
+			else
+			{
+				canbus_init(BIT_RATE_1MHZ, 8, 9,  0x456,0x123 , 1);
+			}
 
 
+		}
+		else if((CANBUS1_TERM_UUT_COMMAND == command_type) || (CANBUS2_TERM_UUT_COMMAND == command_type))
+		{
+		    //Unset CAN termination
+		    GPIO_DRV_SetPinOutput(CAN1_TERM_ENABLE);
+		    GPIO_DRV_SetPinOutput(CAN2_TERM_ENABLE);
+
+			//Set CAN2 to regular mode twisted
+			GPIO_DRV_ClearPinOutput(CAN2_SWC_SELECT);
+
+			//Set to sleep mode NCV7356
+			GPIO_DRV_ClearPinOutput(SWC_MODE0);
+			GPIO_DRV_ClearPinOutput(SWC_MODE1); // Configuration Sleep
+
+			//Enable SWC
+			GPIO_DRV_SetPinOutput(SWC_ENABLE);
+			_time_delay(500);
+
+			if(CANBUS1_TERM_UUT_COMMAND == command_type)
+			{
+				canbus_init(BIT_RATE_1MHZ, 8, 9,  0x456,0x123 , 0);
+			}
+			else
+			{
+				canbus_init(BIT_RATE_1MHZ, 8, 9,  0x456,0x123 , 1);
+			}
+
+		}
+		else if((SWC1_UUT_COMMAND == command_type) ||(SWC2_UUT_COMMAND == command_type))
+		{
+			//Set SWC to operation mode
+			//Set CAN2 to regular mode twisted
+			GPIO_DRV_SetPinOutput(CAN2_SWC_SELECT);
+
+			//Set Speed to Normal 33KHz of NCV7356
+			GPIO_DRV_SetPinOutput(SWC_MODE0);
+			//GPIO_DRV_SetPinOutput(SWC_MODE1); // Configuratio Normal 33KHz Mode Mode0 High Mode1 High
+			GPIO_DRV_ClearPinOutput(SWC_MODE1); // Configuratio High up to 100Khz Mode Mode0 High Mode1 Low
+
+			//Enable SWC
+			GPIO_DRV_ClearPinOutput(SWC_ENABLE);
+			//GPIO_DRV_SetPinOutput(SWC_ENABLE);
+			_time_delay(500);
+
+			if(SWC1_UUT_COMMAND == command_type)
+			{
+				canbus_init(BIT_RATE_33_33KHZ, 8, 9,  0x456,0x123 , 0);
+			}
+			else
+			{
+				canbus_init(BIT_RATE_33_33KHZ, 8, 9,  0x456,0x123 , 1);
+			}
+		}
 
 
 		sprintf((char*)buffer, "ack:can\n");
 		printf("%s",buffer);
+
+
 		uint32_t i;
 		for(i=0;i<10000;i++)
 		{
@@ -263,7 +348,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 			i=i;
 		}
 
-		if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS1_TERM_UUT_COMMAND == command_type))
+		if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS1_TERM_UUT_COMMAND == command_type) || (SWC1_UUT_COMMAND == command_type))
 		{
 			sprintf((char*)candata_compare, "canbus1");
 		}
@@ -275,7 +360,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		//delay for tester to be ready to recieve canbus:
 		if(!strcmp((char*)can_buff.data,(char*)candata_compare))
 		{
-			if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS1_TERM_UUT_COMMAND == command_type))
+			if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS1_TERM_UUT_COMMAND == command_type) || (SWC1_UUT_COMMAND == command_type))
 			{
 				sprintf((char*)candata_compare, "1subnac");
 			}
@@ -291,7 +376,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		}
 		else
 		{
-			i=i++;
+			i++;
 		}
 
 		for(i=0;i<10000;)
@@ -301,7 +386,7 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		//send back
 		_time_delay(1000);
 
-		if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS1_TERM_UUT_COMMAND == command_type))
+		if((CANBUS1_UUT_COMMAND == command_type) || (CANBUS1_TERM_UUT_COMMAND == command_type) || (SWC1_UUT_COMMAND == command_type))
 		{
 			canbus_deinit(0);
 		}
@@ -410,16 +495,25 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 				command_size = uart_command_list.canbus1_term.size;
 				command_type = uart_command_list.canbus1_term.type;
 			break;
-		case BUTTON_UUT_COMMAND:
-				sprintf(command_string, uart_command_list.button.string, uart_command_list.button.size);
-				command_size = uart_command_list.button.size;
-				command_type = uart_command_list.button.type;
-			break;
-
 		case CANBUS2_TERM_UUT_COMMAND:
 				sprintf(command_string, uart_command_list.canbus2_term.string, uart_command_list.canbus2_term.size);
 				command_size = uart_command_list.canbus2_term.size;
 				command_type = uart_command_list.canbus2_term.type;
+			break;
+		case SWC1_UUT_COMMAND:
+				sprintf(command_string, uart_command_list.swc1.string, uart_command_list.swc1.size);
+				command_size = uart_command_list.swc1.size;
+				command_type = uart_command_list.swc1.type;
+			break;
+		case SWC2_UUT_COMMAND:
+				sprintf(command_string, uart_command_list.swc2.string, uart_command_list.swc2.size);
+				command_size = uart_command_list.swc2.size;
+				command_type = uart_command_list.swc2.type;
+			break;
+		case BUTTON_UUT_COMMAND:
+				sprintf(command_string, uart_command_list.button.string, uart_command_list.button.size);
+				command_size = uart_command_list.button.size;
+				command_type = uart_command_list.button.type;
 			break;
 		case WIGGLE_UUT_COMMAND:
 				sprintf(command_string, uart_command_list.wiggle.string, uart_command_list.wiggle.size);

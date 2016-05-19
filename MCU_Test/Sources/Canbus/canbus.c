@@ -95,13 +95,30 @@ flexcan_time_segment_t bitRateTable60Mhz[] = {
  * The table contains propseg, pseg1, pseg2, pre_divider, and rjw. The values are calculated for
  * a protocol engine clock of 48MHz
  */
+
+//flexcan_time_segment_t bitRateTable48Mhz[] = {
+//    { 6, 7, 7, 15, 3},  /* 125 kHz */
+//   { 6, 7, 7,  7, 3},  /* 250 kHz */
+//    { 6, 7, 7,  3, 3},  /* 500 kHz */
+//    { 6, 3, 3,  3, 3},  /* 750 kHz */
+//    { 6, 3, 3,  2, 3},  /* 1   MHz */
+//};
+
+
 flexcan_time_segment_t bitRateTable48Mhz[] = {
-    { 6, 7, 7, 15, 3},  /* 125 kHz */
-    { 6, 7, 7,  7, 3},  /* 250 kHz */
-    { 6, 7, 7,  3, 3},  /* 500 kHz */
-    { 6, 3, 3,  3, 3},  /* 750 kHz */
-    { 6, 3, 3,  2, 3},  /* 1   MHz */
+    { 7, 7, 2, 0xEF, 3}, /* 10 kHz */
+    { 4, 7, 1, 0x95, 3}, /* 20 KHz */
+    { 2, 3, 3, 0x77, 2}, /* 33.33 KHz */  //SWC
+    { 4, 7, 1, 0x3B, 3}, /* 50 KHz */
+    { 4, 7, 1, 0x1D, 3}, /* 100 KHz */
+    { 6, 7, 7, 15, 3 },  /* 125 kHz */
+    { 6, 7, 7,  7, 3 },  /* 250 kHz */
+    { 6, 7, 7,  3, 3 },  /* 500 kHz */
+    { 6, 3, 3,  3, 3 },  /* 750 kHz */
+    { 6, 3, 3,  2, 3 },  /* 1   MHz */
 };
+
+
 
 /*
  * The table contains propseg, pseg1, pseg2, pre_divider, and rjw. The values are calculated for
@@ -176,6 +193,7 @@ void canbus_deinit(uint32_t canInstance)
 }
 
 void canbus_init(
+		        uint32_t bitrate,
 				uint32_t rxMailbxNum,
 				uint32_t txMailbxNum,
 				///uint32_t rxRemoteMailbxNum,
@@ -243,7 +261,7 @@ void canbus_init(
 			result = FLEXCAN_DRV_SetBitrate(instance, &bitRateTable60Mhz[0]); // 125kbps
 			break;
 		case 48000000:
-			result = FLEXCAN_DRV_SetBitrate(instance, &bitRateTable48Mhz[0]); // 125kbps
+			result = FLEXCAN_DRV_SetBitrate(instance, &bitRateTable48Mhz[bitrate]); // 125kbps
 			break;
 		default:
 			if ((canPeClk > 74990000) && (canPeClk <= 75000000))
