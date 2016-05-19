@@ -135,7 +135,9 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 			start_led = true;
 		}
 		break;
-
+	case SCUP_UUT_COMMAND:
+		//
+		break;
 	case J1708_UUT_COMMAND:
 
 		//init rx queue:
@@ -509,6 +511,11 @@ bool search_command_uut(UART_COMMAND_NUMBER_T* command, uint8_t* command_buffer)
 				sprintf(command_string, uart_command_list.swc2.string, uart_command_list.swc2.size);
 				command_size = uart_command_list.swc2.size;
 				command_type = uart_command_list.swc2.type;
+			break;
+		case SCUP_UUT_COMMAND:
+				sprintf(command_string, uart_command_list.scup.string, uart_command_list.scup.size);
+				command_size = uart_command_list.scup.size;
+				command_type = uart_command_list.scup.type;
 			break;
 		case BUTTON_UUT_COMMAND:
 				sprintf(command_string, uart_command_list.button.string, uart_command_list.button.size);

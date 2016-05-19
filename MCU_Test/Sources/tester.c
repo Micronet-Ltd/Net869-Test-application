@@ -368,10 +368,6 @@ void tester_parser(COMMAND_NUMBER_T command)
 		{
 			error_number++;
 		}
-		//GPIO_DRV_ClearPinOutput(CAN1_TERM_ENABLE);
-		//_time_delay(1000);
-
-		//TODO send for canbus1 enable termination:
 
 		test_status = test_canbus(MENU_CANBUS1, ENABLE_TERM);
 
@@ -381,10 +377,6 @@ void tester_parser(COMMAND_NUMBER_T command)
 		}
 		else
 		{
-			//GPIO_DRV_SetPinOutput(CAN1_TERM_ENABLE);
-			//_time_delay(1000);
-
-			//TODO send for canbus1 disabled termination:
 			test_status = test_canbus(MENU_CANBUS1, DIS_TERM);
 			if(!test_status) // should response with error
 			{
@@ -392,10 +384,6 @@ void tester_parser(COMMAND_NUMBER_T command)
 			}
 		}
 
-		//GPIO_DRV_ClearPinOutput(CAN2_TERM_ENABLE);
-		//_time_delay(1000);
-
-		//TODO send for enable cam2 termination:
 		test_status = test_canbus(MENU_CANBUS2, ENABLE_TERM);
 		if(test_status)
 		{
@@ -403,10 +391,7 @@ void tester_parser(COMMAND_NUMBER_T command)
 		}
 		else
 		{
-			//GPIO_DRV_SetPinOutput(CAN2_TERM_ENABLE);
-			//_time_delay(1000);
 
-			//TODO send for disabled termination:
 			test_status = test_canbus(MENU_CANBUS2, DIS_TERM);
 			if(!test_status) // should response with error
 			{
@@ -414,8 +399,6 @@ void tester_parser(COMMAND_NUMBER_T command)
 			}
 		}
 
-
-		//TODO send for swc1 no termination:
 		test_status = test_canbus(MENU_CANBUS1, SWC);
 		if(test_status)
 		{
@@ -770,6 +753,42 @@ uint32_t test_j1708()
 uint32_t test_scup()
 {
 
+
+	bool ack = FALSE;
+	char uart_massage[50] = {0};
+	bool uart_status = 0;
+
+	//send uart scup:
+	sprintf(buffer_print, "scup\n",5);
+	printf("%s",buffer_print);
+
+
+
+	//power off  uut (output4)
+	GPIO_DRV_ClearPinOutput(GPIO_OUT4);
+
+	//wait for 5 sec
+	_time_delay(5000);
+
+	//wait for ack:
+	uart_status = wait_for_uart_massage_tester(&ack, uart_massage);
+	if(uart_status == 1)
+	{
+		memset(uart_massage,0x0,sizeof(uart_massage));
+		sprintf(uart_massage, "super cap  failed - no  ack\r\n");
+		cdc_write((uint8_t *)uart_massage, strlen(uart_massage));
+		return 1; //timeout
+	}
+	else
+	{
+		memset(uart_massage,0x0,sizeof(uart_massage));
+		sprintf(uart_massage, "super cap  pass\r\n");
+		cdc_write((uint8_t *)uart_massage, strlen(uart_massage));
+		return 0;
+	}
+
+	//power on  uut (output4)
+	GPIO_DRV_ClearPinOutput(GPIO_OUT4);
 }
 
 
