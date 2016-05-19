@@ -136,7 +136,12 @@ void execute_command(UART_COMMAND_NUMBER_T command_type)
 		}
 		break;
 	case SCUP_UUT_COMMAND:
-		//
+
+		_time_delay(5000);
+
+		sprintf((char*)buffer, "ack:scup");
+		printf("%s",buffer);
+
 		break;
 	case J1708_UUT_COMMAND:
 
